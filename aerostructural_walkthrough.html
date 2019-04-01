@@ -1,0 +1,2598 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Aerostructural Walkthrough &#8212; OpenAeroStruct 2.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/style.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Aerostructural with Wingbox Walkthrough" href="aerostructural_wingbox_walkthrough.html" />
+    <link rel="prev" title="Structural Optimization Example" href="struct_example.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="aerostructural_wingbox_walkthrough.html" title="Aerostructural with Wingbox Walkthrough"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="struct_example.html" title="Structural Optimization Example"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">OpenAeroStruct 2.1.0 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_example.html">Quick Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="aero_walkthrough.html">Aerodynamic Optimization Walkthrough</a></li>
+<li class="toctree-l1"><a class="reference internal" href="struct_example.html">Structural Optimization Example</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Aerostructural Walkthrough</a></li>
+<li class="toctree-l1"><a class="reference internal" href="aerostructural_wingbox_walkthrough.html">Aerostructural with Wingbox Walkthrough</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="more_examples.html">More Examples</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="specialty_topics.html">Specialty Topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="v1_v2_conversion.html">OpenAeroStruct v1 to v2 Conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_contribute.html">How to Contribute to OpenAeroStruct</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="_srcdocs/index.html">Source Docs</a></li>
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="aerostructural-walkthrough">
+<span id="id1"></span><h1>Aerostructural Walkthrough<a class="headerlink" href="#aerostructural-walkthrough" title="Permalink to this headline">¶</a></h1>
+<p>With aerodynamic- and structural-only analyses done, we now examine an aerostructural design problem.
+The construction of the problem follows the same logic as outlined in <a class="reference internal" href="aero_walkthrough.html#aerodynamic-optimization-walkthrough"><span class="std std-ref">Aerodynamic Optimization Walkthrough</span></a>, though with some added details.
+For example, we use an <cite>AerostructPoint</cite> group instead of an <cite>AeroGroup</cite> because it contains the additional components needed for aerostructural optimization.
+Additionally, we have more variable connections due to the more complex problem formulation.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">openaerostruct.geometry.utils</span> <span class="kn">import</span> <span class="n">generate_mesh</span>
+
+<span class="kn">from</span> <span class="nn">openaerostruct.integration.aerostruct_groups</span> <span class="kn">import</span> <span class="n">AerostructGeometry</span><span class="p">,</span> <span class="n">AerostructPoint</span>
+
+<span class="kn">from</span> <span class="nn">openmdao.api</span> <span class="kn">import</span> <span class="n">IndepVarComp</span><span class="p">,</span> <span class="n">Problem</span><span class="p">,</span> <span class="n">Group</span><span class="p">,</span> <span class="n">SqliteRecorder</span>
+
+<span class="c1"># Create a dictionary to store options about the surface</span>
+<span class="n">mesh_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;num_y&#39;</span> <span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+             <span class="s1">&#39;num_x&#39;</span> <span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+             <span class="s1">&#39;wing_type&#39;</span> <span class="p">:</span> <span class="s1">&#39;CRM&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;symmetry&#39;</span> <span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+             <span class="s1">&#39;num_twist_cp&#39;</span> <span class="p">:</span> <span class="mi">5</span><span class="p">}</span>
+
+<span class="n">mesh</span><span class="p">,</span> <span class="n">twist_cp</span> <span class="o">=</span> <span class="n">generate_mesh</span><span class="p">(</span><span class="n">mesh_dict</span><span class="p">)</span>
+
+<span class="n">surface</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="c1"># Wing definition</span>
+            <span class="s1">&#39;name&#39;</span> <span class="p">:</span> <span class="s1">&#39;wing&#39;</span><span class="p">,</span>        <span class="c1"># name of the surface</span>
+            <span class="s1">&#39;symmetry&#39;</span> <span class="p">:</span> <span class="bp">True</span><span class="p">,</span>     <span class="c1"># if true, model one half of wing</span>
+                                    <span class="c1"># reflected across the plane y = 0</span>
+            <span class="s1">&#39;S_ref_type&#39;</span> <span class="p">:</span> <span class="s1">&#39;wetted&#39;</span><span class="p">,</span> <span class="c1"># how we compute the wing area,</span>
+                                     <span class="c1"># can be &#39;wetted&#39; or &#39;projected&#39;</span>
+            <span class="s1">&#39;fem_model_type&#39;</span> <span class="p">:</span> <span class="s1">&#39;tube&#39;</span><span class="p">,</span>
+
+            <span class="s1">&#39;thickness_cp&#39;</span> <span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">2</span><span class="p">,</span> <span class="o">.</span><span class="mi">3</span><span class="p">]),</span>
+
+            <span class="s1">&#39;twist_cp&#39;</span> <span class="p">:</span> <span class="n">twist_cp</span><span class="p">,</span>
+            <span class="s1">&#39;mesh&#39;</span> <span class="p">:</span> <span class="n">mesh</span><span class="p">,</span>
+
+            <span class="c1"># Aerodynamic performance of the lifting surface at</span>
+            <span class="c1"># an angle of attack of 0 (alpha=0).</span>
+            <span class="c1"># These CL0 and CD0 values are added to the CL and CD</span>
+            <span class="c1"># obtained from aerodynamic analysis of the surface to get</span>
+            <span class="c1"># the total CL and CD.</span>
+            <span class="c1"># These CL0 and CD0 values do not vary wrt alpha.</span>
+            <span class="s1">&#39;CL0&#39;</span> <span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>            <span class="c1"># CL of the surface at alpha=0</span>
+            <span class="s1">&#39;CD0&#39;</span> <span class="p">:</span> <span class="mf">0.015</span><span class="p">,</span>            <span class="c1"># CD of the surface at alpha=0</span>
+
+            <span class="c1"># Airfoil properties for viscous drag calculation</span>
+            <span class="s1">&#39;k_lam&#39;</span> <span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>         <span class="c1"># percentage of chord with laminar</span>
+                                    <span class="c1"># flow, used for viscous drag</span>
+            <span class="s1">&#39;t_over_c_cp&#39;</span> <span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.15</span><span class="p">]),</span>      <span class="c1"># thickness over chord ratio (NACA0015)</span>
+            <span class="s1">&#39;c_max_t&#39;</span> <span class="p">:</span> <span class="o">.</span><span class="mi">303</span><span class="p">,</span>       <span class="c1"># chordwise location of maximum (NACA0015)</span>
+                                    <span class="c1"># thickness</span>
+            <span class="s1">&#39;with_viscous&#39;</span> <span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+            <span class="s1">&#39;with_wave&#39;</span> <span class="p">:</span> <span class="bp">False</span><span class="p">,</span>     <span class="c1"># if true, compute wave drag</span>
+
+            <span class="c1"># Structural values are based on aluminum 7075</span>
+            <span class="s1">&#39;E&#39;</span> <span class="p">:</span> <span class="mf">70.e9</span><span class="p">,</span>            <span class="c1"># [Pa] Young&#39;s modulus of the spar</span>
+            <span class="s1">&#39;G&#39;</span> <span class="p">:</span> <span class="mf">30.e9</span><span class="p">,</span>            <span class="c1"># [Pa] shear modulus of the spar</span>
+            <span class="s1">&#39;yield&#39;</span> <span class="p">:</span> <span class="mf">500.e6</span> <span class="o">/</span> <span class="mf">2.5</span><span class="p">,</span> <span class="c1"># [Pa] yield stress divided by 2.5 for limiting case</span>
+            <span class="s1">&#39;mrho&#39;</span> <span class="p">:</span> <span class="mf">3.e3</span><span class="p">,</span>          <span class="c1"># [kg/m^3] material density</span>
+            <span class="s1">&#39;fem_origin&#39;</span> <span class="p">:</span> <span class="mf">0.35</span><span class="p">,</span>    <span class="c1"># normalized chordwise location of the spar</span>
+            <span class="s1">&#39;wing_weight_ratio&#39;</span> <span class="p">:</span> <span class="mf">2.</span><span class="p">,</span>
+            <span class="s1">&#39;struct_weight_relief&#39;</span> <span class="p">:</span> <span class="bp">False</span><span class="p">,</span>    <span class="c1"># True to add the weight of the structure to the loads on the structure</span>
+            <span class="s1">&#39;distributed_fuel_weight&#39;</span> <span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+            <span class="c1"># Constraints</span>
+            <span class="s1">&#39;exact_failure_constraint&#39;</span> <span class="p">:</span> <span class="bp">False</span><span class="p">,</span> <span class="c1"># if false, use KS function</span>
+            <span class="p">}</span>
+
+<span class="c1"># Create the problem and assign the model group</span>
+<span class="n">prob</span> <span class="o">=</span> <span class="n">Problem</span><span class="p">()</span>
+
+<span class="c1"># Add problem information as an independent variables component</span>
+<span class="n">indep_var_comp</span> <span class="o">=</span> <span class="n">IndepVarComp</span><span class="p">()</span>
+<span class="n">indep_var_comp</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="s1">&#39;v&#39;</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="mf">248.136</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;m/s&#39;</span><span class="p">)</span>
+<span class="n">indep_var_comp</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="s1">&#39;alpha&#39;</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="mf">5.</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;deg&#39;</span><span class="p">)</span>
+<span class="n">indep_var_comp</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="s1">&#39;Mach_number&#39;</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="mf">0.84</span><span class="p">)</span>
+<span class="n">indep_var_comp</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="s1">&#39;re&#39;</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="mf">1.e6</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;1/m&#39;</span><span class="p">)</span>
+<span class="n">indep_var_comp</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="s1">&#39;rho&#39;</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="mf">0.38</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;kg/m**3&#39;</span><span class="p">)</span>
+<span class="n">indep_var_comp</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="s1">&#39;CT&#39;</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="n">grav_constant</span> <span class="o">*</span> <span class="mf">17.e-6</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;1/s&#39;</span><span class="p">)</span>
+<span class="n">indep_var_comp</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="mf">11.165e6</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;m&#39;</span><span class="p">)</span>
+<span class="n">indep_var_comp</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="s1">&#39;W0&#39;</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="mf">0.4</span> <span class="o">*</span> <span class="mf">3e5</span><span class="p">,</span>  <span class="n">units</span><span class="o">=</span><span class="s1">&#39;kg&#39;</span><span class="p">)</span>
+<span class="n">indep_var_comp</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="s1">&#39;speed_of_sound&#39;</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="mf">295.4</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;m/s&#39;</span><span class="p">)</span>
+<span class="n">indep_var_comp</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="s1">&#39;load_factor&#39;</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="mf">1.</span><span class="p">)</span>
+<span class="n">indep_var_comp</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="s1">&#39;empty_cg&#39;</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">)),</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;m&#39;</span><span class="p">)</span>
+
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_subsystem</span><span class="p">(</span><span class="s1">&#39;prob_vars&#39;</span><span class="p">,</span>
+     <span class="n">indep_var_comp</span><span class="p">,</span>
+     <span class="n">promotes</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">])</span>
+
+<span class="n">aerostruct_group</span> <span class="o">=</span> <span class="n">AerostructGeometry</span><span class="p">(</span><span class="n">surface</span><span class="o">=</span><span class="n">surface</span><span class="p">)</span>
+
+<span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;wing&#39;</span>
+
+<span class="c1"># Add tmp_group to the problem with the name of the surface.</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_subsystem</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">aerostruct_group</span><span class="p">)</span>
+
+<span class="n">point_name</span> <span class="o">=</span> <span class="s1">&#39;AS_point_0&#39;</span>
+
+<span class="c1"># Create the aero point group and add it to the model</span>
+<span class="n">AS_point</span> <span class="o">=</span> <span class="n">AerostructPoint</span><span class="p">(</span><span class="n">surfaces</span><span class="o">=</span><span class="p">[</span><span class="n">surface</span><span class="p">])</span>
+
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_subsystem</span><span class="p">(</span><span class="n">point_name</span><span class="p">,</span> <span class="n">AS_point</span><span class="p">,</span>
+    <span class="n">promotes_inputs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;v&#39;</span><span class="p">,</span> <span class="s1">&#39;alpha&#39;</span><span class="p">,</span> <span class="s1">&#39;Mach_number&#39;</span><span class="p">,</span> <span class="s1">&#39;re&#39;</span><span class="p">,</span> <span class="s1">&#39;rho&#39;</span><span class="p">,</span> <span class="s1">&#39;CT&#39;</span><span class="p">,</span> <span class="s1">&#39;R&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;W0&#39;</span><span class="p">,</span> <span class="s1">&#39;speed_of_sound&#39;</span><span class="p">,</span> <span class="s1">&#39;empty_cg&#39;</span><span class="p">,</span> <span class="s1">&#39;load_factor&#39;</span><span class="p">])</span>
+
+<span class="n">com_name</span> <span class="o">=</span> <span class="n">point_name</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_perf&#39;</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.local_stiff_transformed&#39;</span><span class="p">,</span> <span class="n">point_name</span> <span class="o">+</span> <span class="s1">&#39;.coupled.&#39;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.local_stiff_transformed&#39;</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.nodes&#39;</span><span class="p">,</span> <span class="n">point_name</span> <span class="o">+</span> <span class="s1">&#39;.coupled.&#39;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.nodes&#39;</span><span class="p">)</span>
+
+<span class="c1"># Connect aerodyamic mesh to coupled group mesh</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.mesh&#39;</span><span class="p">,</span> <span class="n">point_name</span> <span class="o">+</span> <span class="s1">&#39;.coupled.&#39;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.mesh&#39;</span><span class="p">)</span>
+
+<span class="c1"># Connect performance calculation variables</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.radius&#39;</span><span class="p">,</span> <span class="n">com_name</span> <span class="o">+</span> <span class="s1">&#39;.radius&#39;</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.thickness&#39;</span><span class="p">,</span> <span class="n">com_name</span> <span class="o">+</span> <span class="s1">&#39;.thickness&#39;</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.nodes&#39;</span><span class="p">,</span> <span class="n">com_name</span> <span class="o">+</span> <span class="s1">&#39;.nodes&#39;</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.cg_location&#39;</span><span class="p">,</span> <span class="n">point_name</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="s1">&#39;total_perf.&#39;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_cg_location&#39;</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.structural_mass&#39;</span><span class="p">,</span> <span class="n">point_name</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="s1">&#39;total_perf.&#39;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_structural_mass&#39;</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.t_over_c&#39;</span><span class="p">,</span> <span class="n">com_name</span> <span class="o">+</span> <span class="s1">&#39;.t_over_c&#39;</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">openmdao.api</span> <span class="kn">import</span> <span class="n">ScipyOptimizeDriver</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">driver</span> <span class="o">=</span> <span class="n">ScipyOptimizeDriver</span><span class="p">()</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s1">&#39;tol&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1e-9</span>
+
+<span class="n">recorder</span> <span class="o">=</span> <span class="n">SqliteRecorder</span><span class="p">(</span><span class="s2">&quot;aerostruct.db&quot;</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">add_recorder</span><span class="p">(</span><span class="n">recorder</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">recording_options</span><span class="p">[</span><span class="s1">&#39;record_derivatives&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">recording_options</span><span class="p">[</span><span class="s1">&#39;includes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>
+
+<span class="c1"># Setup problem and add design variables, constraint, and objective</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_design_var</span><span class="p">(</span><span class="s1">&#39;wing.twist_cp&#39;</span><span class="p">,</span> <span class="n">lower</span><span class="o">=-</span><span class="mf">10.</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">15.</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_design_var</span><span class="p">(</span><span class="s1">&#39;wing.thickness_cp&#39;</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">scaler</span><span class="o">=</span><span class="mf">1e2</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="s1">&#39;AS_point_0.wing_perf.failure&#39;</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="s1">&#39;AS_point_0.wing_perf.thickness_intersects&#39;</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+
+<span class="c1"># Add design variables, constraisnt, and objective on the problem</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_design_var</span><span class="p">(</span><span class="s1">&#39;alpha&#39;</span><span class="p">,</span> <span class="n">lower</span><span class="o">=-</span><span class="mf">10.</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">10.</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="s1">&#39;AS_point_0.L_equals_W&#39;</span><span class="p">,</span> <span class="n">equals</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_objective</span><span class="p">(</span><span class="s1">&#39;AS_point_0.fuelburn&#39;</span><span class="p">,</span> <span class="n">scaler</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">)</span>
+
+<span class="c1"># Set up the problem</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">check</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="n">prob</span><span class="o">.</span><span class="n">run_driver</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="cell border-box-sizing code_cell rendered"><div class="output_area"><pre>INFO: The following groups contain cycles:
+   Group 'AS_point_0.coupled' has the following cycles: [['wing', 'aero_states', 'wing_loads']]
+
+WARNING: The following inputs are not connected:
+   wing.geometry.mesh.dihedral.dihedral
+   wing.geometry.mesh.scale_x.chord
+   wing.geometry.mesh.shear_x.xshear
+   wing.geometry.mesh.shear_y.yshear
+   wing.geometry.mesh.shear_z.zshear
+   wing.geometry.mesh.stretch.span
+   wing.geometry.mesh.sweep.sweep
+   wing.geometry.mesh.taper.taper
+
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 2045887.93 1
+NL: NLBGS 1 ; 1752442.95 0.856568404
+NL: NLBGS 2 ; 62932.6758 0.0307605686
+NL: NLBGS 3 ; 5260.85989 0.00257143113
+NL: NLBGS 4 ; 30.4043033 1.48611774e-05
+NL: NLBGS 5 ; 2.47091434 1.20774667e-06
+NL: NLBGS 6 ; 0.0227688278 1.1129069e-08
+NL: NLBGS 7 ; 0.00177377366 8.66994541e-10
+NL: NLBGS 8 ; 2.39962939e-05 1.17290364e-11
+NL: NLBGS 9 ; 1.79896043e-06 8.79305464e-13
+NL: NLBGS 10 ; 3.14574163e-08 1.53759235e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 3.28610185e-09 1
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 2083143.27 1
+NL: NLBGS 1 ; 1785437.7 0.85708829
+NL: NLBGS 2 ; 104755.031 0.0502870026
+NL: NLBGS 3 ; 6637.74598 0.00318640878
+NL: NLBGS 4 ; 326.993088 0.000156971003
+NL: NLBGS 5 ; 36.5487671 1.75450089e-05
+NL: NLBGS 6 ; 2.5070795 1.20350796e-06
+NL: NLBGS 7 ; 0.327135739 1.57039482e-07
+NL: NLBGS 8 ; 0.0301320598 1.44647084e-08
+NL: NLBGS 9 ; 0.00429976605 2.06407601e-09
+NL: NLBGS 10 ; 0.000486218844 2.3340634e-10
+NL: NLBGS 11 ; 7.38891708e-05 3.5470038e-11
+NL: NLBGS 12 ; 9.78393798e-06 4.69671873e-12
+NL: NLBGS 13 ; 1.56122728e-06 7.4945747e-13
+NL: NLBGS 14 ; 2.35205543e-07 1.12908962e-13
+NL: NLBGS 15 ; 4.11512751e-08 1.97544143e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 226750.895 1
+NL: NLBGS 1 ; 191199.146 0.843212308
+NL: NLBGS 2 ; 11103.0473 0.0489658366
+NL: NLBGS 3 ; 789.17955 0.00348038118
+NL: NLBGS 4 ; 44.075222 0.000194377279
+NL: NLBGS 5 ; 5.20512706 2.29552657e-05
+NL: NLBGS 6 ; 0.404095947 1.78211401e-06
+NL: NLBGS 7 ; 0.0553395675 2.4405446e-07
+NL: NLBGS 8 ; 0.00570067016 2.51406732e-08
+NL: NLBGS 9 ; 0.000850966365 3.75286882e-09
+NL: NLBGS 10 ; 0.000107091973 4.72289084e-10
+NL: NLBGS 11 ; 1.69854512e-05 7.49079786e-11
+NL: NLBGS 12 ; 2.50305649e-06 1.10387943e-11
+NL: NLBGS 13 ; 4.15150707e-07 1.83086689e-12
+NL: NLBGS 14 ; 7.13178946e-08 3.14520895e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 6439.45103 1
+NL: NLBGS 1 ; 5069.82092 0.787306386
+NL: NLBGS 2 ; 73.6487122 0.0114371104
+NL: NLBGS 3 ; 2.56984036 0.000399077553
+NL: NLBGS 4 ; 0.268779017 4.17394303e-05
+NL: NLBGS 5 ; 0.0175526129 2.72579336e-06
+NL: NLBGS 6 ; 0.000890350296 1.38264938e-07
+NL: NLBGS 7 ; 0.000104825725 1.62786741e-08
+NL: NLBGS 8 ; 6.86962168e-06 1.06680238e-09
+NL: NLBGS 9 ; 9.2575487e-07 1.43763011e-10
+NL: NLBGS 10 ; 8.20315126e-08 1.27388984e-11
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 33407.3208 1
+NL: NLBGS 1 ; 26440.3548 0.791453912
+NL: NLBGS 2 ; 432.585133 0.0129488125
+NL: NLBGS 3 ; 16.1571537 0.000483641109
+NL: NLBGS 4 ; 1.52322965 4.55956841e-05
+NL: NLBGS 5 ; 0.129076488 3.86371862e-06
+NL: NLBGS 6 ; 0.00667663835 1.99855546e-07
+NL: NLBGS 7 ; 0.000822008061 2.46056266e-08
+NL: NLBGS 8 ; 6.31094981e-05 1.88909187e-09
+NL: NLBGS 9 ; 8.81242966e-06 2.63787381e-10
+NL: NLBGS 10 ; 8.83389372e-07 2.64429876e-11
+NL: NLBGS 11 ; 1.34216861e-07 4.01758829e-12
+NL: NLBGS 12 ; 1.84217198e-08 5.5142763e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 164599.325 1
+NL: NLBGS 1 ; 130620.697 0.793567634
+NL: NLBGS 2 ; 2103.61384 0.0127802094
+NL: NLBGS 3 ; 79.8478407 0.000485104303
+NL: NLBGS 4 ; 8.14847505 4.95049118e-05
+NL: NLBGS 5 ; 0.658044361 3.99785578e-06
+NL: NLBGS 6 ; 0.0339454216 2.06230625e-07
+NL: NLBGS 7 ; 0.00423977685 2.57581667e-08
+NL: NLBGS 8 ; 0.00032424138 1.96988281e-09
+NL: NLBGS 9 ; 4.61638494e-05 2.80461961e-10
+NL: NLBGS 10 ; 4.69331313e-06 2.85135625e-11
+NL: NLBGS 11 ; 7.18039411e-07 4.36234725e-12
+NL: NLBGS 12 ; 9.30368158e-08 5.65232062e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 763823.184 1
+NL: NLBGS 1 ; 612582.8 0.801995558
+NL: NLBGS 2 ; 9266.25284 0.0121314108
+NL: NLBGS 3 ; 459.072756 0.000601019668
+NL: NLBGS 4 ; 65.5254504 8.57861503e-05
+NL: NLBGS 5 ; 3.2170086 4.21171898e-06
+NL: NLBGS 6 ; 0.388427095 5.08530119e-07
+NL: NLBGS 7 ; 0.039039688 5.11108969e-08
+NL: NLBGS 8 ; 0.0021762826 2.84919684e-09
+NL: NLBGS 9 ; 0.000322413359 4.22104705e-10
+NL: NLBGS 10 ; 2.87747008e-05 3.76719395e-11
+NL: NLBGS 11 ; 4.78219385e-06 6.26086502e-12
+NL: NLBGS 12 ; 5.82889076e-07 7.6312043e-13
+NL: NLBGS 13 ; 1.06189308e-07 1.39023416e-13
+NL: NLBGS 14 ; 2.73424446e-08 3.57968247e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 62252.4981 1
+NL: NLBGS 1 ; 44139.0837 0.709033132
+NL: NLBGS 2 ; 2948.86252 0.0473693845
+NL: NLBGS 3 ; 323.925849 0.00520341929
+NL: NLBGS 4 ; 25.4089563 0.000408159626
+NL: NLBGS 5 ; 3.832373 6.15617545e-05
+NL: NLBGS 6 ; 0.446721768 7.17596534e-06
+NL: NLBGS 7 ; 0.0764976325 1.22882832e-06
+NL: NLBGS 8 ; 0.0118823542 1.90873532e-07
+NL: NLBGS 9 ; 0.00219704478 3.52924758e-08
+NL: NLBGS 10 ; 0.00042159356 6.77231554e-09
+NL: NLBGS 11 ; 8.23075558e-05 1.32215667e-09
+NL: NLBGS 12 ; 1.86917828e-05 3.00257555e-10
+NL: NLBGS 13 ; 3.80757949e-06 6.11634812e-11
+NL: NLBGS 14 ; 9.95217353e-07 1.59867858e-11
+NL: NLBGS 15 ; 2.12640414e-07 3.4157732e-12
+NL: NLBGS 16 ; 5.88596818e-08 9.45499114e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 101524.602 1
+NL: NLBGS 1 ; 81356.6629 0.801349244
+NL: NLBGS 2 ; 831.612391 0.00819124012
+NL: NLBGS 3 ; 76.3459736 0.00075199481
+NL: NLBGS 4 ; 9.720294 9.5743237e-05
+NL: NLBGS 5 ; 0.715401207 7.0465798e-06
+NL: NLBGS 6 ; 0.114806783 1.13082722e-06
+NL: NLBGS 7 ; 0.013080186 1.28837599e-07
+NL: NLBGS 8 ; 0.00231991404 2.28507574e-08
+NL: NLBGS 9 ; 0.000350422383 3.45160067e-09
+NL: NLBGS 10 ; 6.62966815e-05 6.53010998e-10
+NL: NLBGS 11 ; 1.23334706e-05 1.21482581e-10
+NL: NLBGS 12 ; 2.44178458e-06 2.40511614e-11
+NL: NLBGS 13 ; 5.35639989e-07 5.27596248e-12
+NL: NLBGS 14 ; 1.07149375e-07 1.05540306e-12
+NL: NLBGS 15 ; 2.80268519e-08 2.76059708e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 482904.837 1
+NL: NLBGS 1 ; 388724.133 0.80497047
+NL: NLBGS 2 ; 4052.15879 0.00839121601
+NL: NLBGS 3 ; 441.520732 0.000914301739
+NL: NLBGS 4 ; 57.0847235 0.000118211124
+NL: NLBGS 5 ; 4.30421901 8.91318265e-06
+NL: NLBGS 6 ; 0.717704261 1.48622297e-06
+NL: NLBGS 7 ; 0.0870357492 1.80233749e-07
+NL: NLBGS 8 ; 0.0161014307 3.33428649e-08
+NL: NLBGS 9 ; 0.00264052189 5.46799636e-09
+NL: NLBGS 10 ; 0.00052163674 1.08020608e-09
+NL: NLBGS 11 ; 0.000106651979 2.20855065e-10
+NL: NLBGS 12 ; 2.20973872e-05 4.57592998e-11
+NL: NLBGS 13 ; 5.38800487e-06 1.11574879e-11
+NL: NLBGS 14 ; 1.15965827e-06 2.40142195e-12
+NL: NLBGS 15 ; 3.28105797e-07 6.79441936e-13
+NL: NLBGS 16 ; 7.43732423e-08 1.54012212e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 1381615.25 1
+NL: NLBGS 1 ; 1141671.69 0.826331133
+NL: NLBGS 2 ; 45107.9416 0.0326486999
+NL: NLBGS 3 ; 3251.2494 0.00235322345
+NL: NLBGS 4 ; 553.800771 0.000400835741
+NL: NLBGS 5 ; 123.023203 8.90430262e-05
+NL: NLBGS 6 ; 16.4024322 1.18719247e-05
+NL: NLBGS 7 ; 4.09531555 2.96415052e-06
+NL: NLBGS 8 ; 0.856380288 6.19839923e-07
+NL: NLBGS 9 ; 0.226491086 1.63932098e-07
+NL: NLBGS 10 ; 0.063945867 4.62834114e-08
+NL: NLBGS 11 ; 0.0175026358 1.26682417e-08
+NL: NLBGS 12 ; 0.00617764926 4.47132389e-09
+NL: NLBGS 13 ; 0.00172870855 1.25122284e-09
+NL: NLBGS 14 ; 0.000728052916 5.26957789e-10
+NL: NLBGS 15 ; 0.000206765059 1.49654587e-10
+NL: NLBGS 16 ; 0.000100711745 7.28942046e-11
+NL: NLBGS 17 ; 2.88895593e-05 2.09099888e-11
+NL: NLBGS 18 ; 1.59106015e-05 1.15159423e-11
+NL: NLBGS 19 ; 4.5940521e-06 3.32513129e-12
+NL: NLBGS 20 ; 2.80871306e-06 2.03291985e-12
+NL: NLBGS 21 ; 8.13386274e-07 5.88721263e-13
+NL: NLBGS 22 ; 5.44421312e-07 3.94046977e-13
+NL: NLBGS 23 ; 1.58571307e-07 1.14772406e-13
+NL: NLBGS 24 ; 1.12605954e-07 8.15031204e-14
+NL: NLBGS 25 ; 3.12853694e-08 2.26440534e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 840500.712 1
+NL: NLBGS 1 ; 700644.318 0.833603479
+NL: NLBGS 2 ; 18829.076 0.022402213
+NL: NLBGS 3 ; 1072.14359 0.00127560104
+NL: NLBGS 4 ; 178.300333 0.00021213585
+NL: NLBGS 5 ; 18.5890966 2.21166935e-05
+NL: NLBGS 6 ; 1.28110872 1.52422086e-06
+NL: NLBGS 7 ; 0.2224345 2.64645225e-07
+NL: NLBGS 8 ; 0.0264695047 3.14925428e-08
+NL: NLBGS 9 ; 0.00517804637 6.16066863e-09
+NL: NLBGS 10 ; 0.000885411401 1.05343326e-09
+NL: NLBGS 11 ; 0.000185639616 2.20867887e-10
+NL: NLBGS 12 ; 4.08338813e-05 4.85828039e-11
+NL: NLBGS 13 ; 8.98078884e-06 1.06850461e-11
+NL: NLBGS 14 ; 2.39951486e-06 2.85486357e-12
+NL: NLBGS 15 ; 5.44485259e-07 6.47810586e-13
+NL: NLBGS 16 ; 1.75528893e-07 2.08838482e-13
+NL: NLBGS 17 ; 4.46233399e-08 5.30913767e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 1628787.22 1
+NL: NLBGS 1 ; 1487521.91 0.913269637
+NL: NLBGS 2 ; 489864.942 0.300754412
+NL: NLBGS 3 ; 167156.536 0.10262638
+NL: NLBGS 4 ; 2872.04968 0.00176330563
+NL: NLBGS 5 ; 1244.45789 0.000764039576
+NL: NLBGS 6 ; 284.502872 0.000174671602
+NL: NLBGS 7 ; 54.1586399 3.32508994e-05
+NL: NLBGS 8 ; 19.1819586 1.17768352e-05
+NL: NLBGS 9 ; 1.61134754 9.89292845e-07
+NL: NLBGS 10 ; 0.603720396 3.70656394e-07
+NL: NLBGS 11 ; 0.0171075031 1.05032155e-08
+NL: NLBGS 12 ; 0.00537606146 3.30065303e-09
+NL: NLBGS 13 ; 0.00154403845 9.4796818e-10
+NL: NLBGS 14 ; 0.000275824485 1.69343473e-10
+NL: NLBGS 15 ; 7.76197182e-05 4.76549162e-11
+NL: NLBGS 16 ; 1.41598961e-05 8.69352115e-12
+NL: NLBGS 17 ; 3.96344375e-06 2.43337111e-12
+NL: NLBGS 18 ; 7.30006461e-07 4.48190195e-13
+NL: NLBGS 19 ; 2.05329625e-07 1.26062891e-13
+NL: NLBGS 20 ; 4.21299347e-08 2.58658309e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 1299844.92 1
+NL: NLBGS 1 ; 1121083.23 0.8624746
+NL: NLBGS 2 ; 76102.2401 0.0585471689
+NL: NLBGS 3 ; 6019.79374 0.00463116303
+NL: NLBGS 4 ; 639.380418 0.00049188977
+NL: NLBGS 5 ; 105.81577 8.14064575e-05
+NL: NLBGS 6 ; 13.3762787 1.02906727e-05
+NL: NLBGS 7 ; 2.56747804 1.97521874e-06
+NL: NLBGS 8 ; 0.460439909 3.54226802e-07
+NL: NLBGS 9 ; 0.0957703977 7.3678326e-08
+NL: NLBGS 10 ; 0.0220065375 1.69301254e-08
+NL: NLBGS 11 ; 0.00482681886 3.71338056e-09
+NL: NLBGS 12 ; 0.00134386572 1.03386619e-09
+NL: NLBGS 13 ; 0.000306259985 2.35612711e-10
+NL: NLBGS 14 ; 9.97589778e-05 7.67468306e-11
+NL: NLBGS 15 ; 2.34012675e-05 1.80031227e-11
+NL: NLBGS 16 ; 8.70721955e-06 6.69866029e-12
+NL: NLBGS 17 ; 2.08932705e-06 1.6073664e-12
+NL: NLBGS 18 ; 8.74274944e-07 6.72599424e-13
+NL: NLBGS 19 ; 2.14718937e-07 1.65188119e-13
+NL: NLBGS 20 ; 1.00868412e-07 7.76003432e-14
+NL: NLBGS 21 ; 2.39877773e-08 1.84543378e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 1520265.2 1
+NL: NLBGS 1 ; 1398692.53 0.920031936
+NL: NLBGS 2 ; 483059.04 0.317746562
+NL: NLBGS 3 ; 165309.742 0.108737437
+NL: NLBGS 4 ; 2612.33364 0.00171834075
+NL: NLBGS 5 ; 1168.89112 0.00076887317
+NL: NLBGS 6 ; 317.097503 0.000208580387
+NL: NLBGS 7 ; 43.1572243 2.83879578e-05
+NL: NLBGS 8 ; 15.6564958 1.02985294e-05
+NL: NLBGS 9 ; 0.859593276 5.65423241e-07
+NL: NLBGS 10 ; 0.325023008 2.13793625e-07
+NL: NLBGS 11 ; 0.00711001561 4.67682587e-09
+NL: NLBGS 12 ; 0.00208959349 1.37449275e-09
+NL: NLBGS 13 ; 0.000681778033 4.48459936e-10
+NL: NLBGS 14 ; 7.61449812e-05 5.00866437e-11
+NL: NLBGS 15 ; 2.32437154e-05 1.52892504e-11
+NL: NLBGS 16 ; 2.84592054e-06 1.87198953e-12
+NL: NLBGS 17 ; 8.92321264e-07 5.86951057e-13
+NL: NLBGS 18 ; 1.07858776e-07 7.09473425e-14
+NL: NLBGS 19 ; 3.34342329e-08 2.19923688e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 1208301.64 1
+NL: NLBGS 1 ; 1044707.48 0.864608179
+NL: NLBGS 2 ; 78334.959 0.0648306319
+NL: NLBGS 3 ; 6454.85349 0.00534208782
+NL: NLBGS 4 ; 677.758485 0.000560918285
+NL: NLBGS 5 ; 115.728485 9.577781e-05
+NL: NLBGS 6 ; 15.1181098 1.25118673e-05
+NL: NLBGS 7 ; 2.97602053 2.46297814e-06
+NL: NLBGS 8 ; 0.552017661 4.56854184e-07
+NL: NLBGS 9 ; 0.117415722 9.71741805e-08
+NL: NLBGS 10 ; 0.0279275361 2.31130499e-08
+NL: NLBGS 11 ; 0.00625153299 5.17381817e-09
+NL: NLBGS 12 ; 0.0018028495 1.49205251e-09
+NL: NLBGS 13 ; 0.000418642545 3.46471883e-10
+NL: NLBGS 14 ; 0.000141331212 1.16966829e-10
+NL: NLBGS 15 ; 3.37360845e-05 2.79202505e-11
+NL: NLBGS 16 ; 1.30182703e-05 1.07740235e-11
+NL: NLBGS 17 ; 3.17225885e-06 2.62538652e-12
+NL: NLBGS 18 ; 1.37346089e-06 1.1366871e-12
+NL: NLBGS 19 ; 3.40233678e-07 2.81580084e-13
+NL: NLBGS 20 ; 1.59344949e-07 1.31875141e-13
+NL: NLBGS 21 ; 3.91898266e-08 3.24338106e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 1423311.52 1
+NL: NLBGS 1 ; 1318865.55 0.926617631
+NL: NLBGS 2 ; 476067.736 0.334478944
+NL: NLBGS 3 ; 163325.391 0.114750277
+NL: NLBGS 4 ; 2438.59465 0.0017133246
+NL: NLBGS 5 ; 1132.94924 0.000795995272
+NL: NLBGS 6 ; 332.618954 0.000233693713
+NL: NLBGS 7 ; 24.7709062 1.74037137e-05
+NL: NLBGS 8 ; 4.36256022 3.06507757e-06
+NL: NLBGS 9 ; 1.95737796 1.37522807e-06
+NL: NLBGS 10 ; 0.474913431 3.33667944e-07
+NL: NLBGS 11 ; 0.106576491 7.48792439e-08
+NL: NLBGS 12 ; 0.0265970909 1.86867671e-08
+NL: NLBGS 13 ; 0.005822828 4.09104254e-09
+NL: NLBGS 14 ; 0.0014826455 1.04168727e-09
+NL: NLBGS 15 ; 0.000317158637 2.22831496e-10
+NL: NLBGS 16 ; 8.17954081e-05 5.74683804e-11
+NL: NLBGS 17 ; 1.72139762e-05 1.20943138e-11
+NL: NLBGS 18 ; 4.47529347e-06 3.14428247e-12
+NL: NLBGS 19 ; 9.34160039e-07 6.56328585e-13
+NL: NLBGS 20 ; 2.44058493e-07 1.71472295e-13
+NL: NLBGS 21 ; 5.02082713e-08 3.52756725e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 1127135.58 1
+NL: NLBGS 1 ; 976626.65 0.866467767
+NL: NLBGS 2 ; 80679.7269 0.0715794339
+NL: NLBGS 3 ; 6938.52651 0.00615589341
+NL: NLBGS 4 ; 717.899571 0.000636923882
+NL: NLBGS 5 ; 126.427484 0.00011216706
+NL: NLBGS 6 ; 17.0191844 1.50995006e-05
+NL: NLBGS 7 ; 3.43647222 3.04885435e-06
+NL: NLBGS 8 ; 0.658088428 5.83859155e-07
+NL: NLBGS 9 ; 0.143177894 1.27028102e-07
+NL: NLBGS 10 ; 0.0352044668 3.12335689e-08
+NL: NLBGS 11 ; 0.00804451813 7.1371344e-09
+NL: NLBGS 12 ; 0.00240055392 2.12978275e-09
+NL: NLBGS 13 ; 0.000568115421 5.04034678e-10
+NL: NLBGS 14 ; 0.000198599404 1.76198327e-10
+NL: NLBGS 15 ; 4.82476503e-05 4.28055427e-11
+NL: NLBGS 16 ; 1.92789606e-05 1.71043847e-11
+NL: NLBGS 17 ; 4.77525265e-06 4.23662665e-12
+NL: NLBGS 18 ; 2.1428315e-06 1.90113021e-12
+NL: NLBGS 19 ; 5.40227545e-07 4.79292424e-13
+NL: NLBGS 20 ; 2.64712044e-07 2.34853773e-13
+NL: NLBGS 21 ; 6.5276262e-08 5.79134073e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 1335560.33 1
+NL: NLBGS 1 ; 1246123.02 0.933033868
+NL: NLBGS 2 ; 468723.04 0.350956097
+NL: NLBGS 3 ; 161155.736 0.120665262
+NL: NLBGS 4 ; 2341.47075 0.00175317483
+NL: NLBGS 5 ; 1074.73598 0.000804707924
+NL: NLBGS 6 ; 295.1005 0.000220956323
+NL: NLBGS 7 ; 95.5020626 7.15071124e-05
+NL: NLBGS 8 ; 26.7433761 2.00240869e-05
+NL: NLBGS 9 ; 7.29467475 5.46188337e-06
+NL: NLBGS 10 ; 2.03250437 1.52183644e-06
+NL: NLBGS 11 ; 0.542610254 4.06279104e-07
+NL: NLBGS 12 ; 0.151825027 1.13678898e-07
+NL: NLBGS 13 ; 0.0436689501 3.26971003e-08
+NL: NLBGS 14 ; 0.0122308968 9.15787669e-09
+NL: NLBGS 15 ; 0.00383977557 2.87502967e-09
+NL: NLBGS 16 ; 0.00107773287 8.06951847e-10
+NL: NLBGS 17 ; 0.000364842125 2.73175323e-10
+NL: NLBGS 18 ; 0.000102574427 7.68025411e-11
+NL: NLBGS 19 ; 3.68721244e-05 2.76079812e-11
+NL: NLBGS 20 ; 1.03802215e-05 7.77218466e-12
+NL: NLBGS 21 ; 3.91197478e-06 2.92908878e-12
+NL: NLBGS 22 ; 1.1018968e-06 8.25044569e-13
+NL: NLBGS 23 ; 4.3180233e-07 3.23311737e-13
+NL: NLBGS 24 ; 1.23068816e-07 9.21477025e-14
+NL: NLBGS 25 ; 4.80574302e-08 3.59829722e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 1054317.91 1
+NL: NLBGS 1 ; 915230.059 0.868077882
+NL: NLBGS 2 ; 83118.4839 0.0788362627
+NL: NLBGS 3 ; 7474.41776 0.00708933963
+NL: NLBGS 4 ; 759.782889 0.000720639269
+NL: NLBGS 5 ; 137.943616 0.000130836832
+NL: NLBGS 6 ; 19.0800129 1.80970205e-05
+NL: NLBGS 7 ; 3.95217102 3.74855722e-06
+NL: NLBGS 8 ; 0.779935695 7.39753812e-07
+NL: NLBGS 9 ; 0.173602409 1.64658503e-07
+NL: NLBGS 10 ; 0.044068303 4.17979269e-08
+NL: NLBGS 11 ; 0.0102817665 9.75205521e-09
+NL: NLBGS 12 ; 0.003171668 3.00826531e-09
+NL: NLBGS 13 ; 0.000765143703 7.25723896e-10
+NL: NLBGS 14 ; 0.000276751825 2.62493715e-10
+NL: NLBGS 15 ; 6.84408158e-05 6.49147805e-11
+NL: NLBGS 16 ; 2.8326194e-05 2.68668432e-11
+NL: NLBGS 17 ; 7.13953531e-06 6.77171015e-12
+NL: NLBGS 18 ; 3.32173546e-06 3.15060138e-12
+NL: NLBGS 19 ; 8.50781514e-07 8.06949692e-13
+NL: NLBGS 20 ; 4.39386699e-07 4.16749724e-13
+NL: NLBGS 21 ; 1.14432194e-07 1.08536707e-13
+NL: NLBGS 22 ; 6.89972708e-08 6.54425672e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 1255507.3 1
+NL: NLBGS 1 ; 1179157.96 0.939188454
+NL: NLBGS 2 ; 460677.388 0.366925297
+NL: NLBGS 3 ; 158661.526 0.126372444
+NL: NLBGS 4 ; 2303.5403 0.00183474863
+NL: NLBGS 5 ; 945.291183 0.000752915721
+NL: NLBGS 6 ; 216.48799 0.00017243069
+NL: NLBGS 7 ; 95.5938943 7.61396564e-05
+NL: NLBGS 8 ; 31.5471643 2.51270258e-05
+NL: NLBGS 9 ; 9.01474028 7.18015761e-06
+NL: NLBGS 10 ; 2.75417374 2.19367402e-06
+NL: NLBGS 11 ; 0.668268628 5.32269807e-07
+NL: NLBGS 12 ; 0.184597524 1.47030228e-07
+NL: NLBGS 13 ; 0.0453655032 3.61332055e-08
+NL: NLBGS 14 ; 0.0123951235 9.87260167e-09
+NL: NLBGS 15 ; 0.00338153916 2.69336479e-09
+NL: NLBGS 16 ; 0.000933116255 7.43218503e-10
+NL: NLBGS 17 ; 0.000276688645 2.20379957e-10
+NL: NLBGS 18 ; 7.63750075e-05 6.08319901e-11
+NL: NLBGS 19 ; 2.41188415e-05 1.92104351e-11
+NL: NLBGS 20 ; 6.67627991e-06 5.31759546e-12
+NL: NLBGS 21 ; 2.21512568e-06 1.7643272e-12
+NL: NLBGS 22 ; 6.14856737e-07 4.89727728e-13
+NL: NLBGS 23 ; 2.1135391e-07 1.68341443e-13
+NL: NLBGS 24 ; 5.7346162e-08 4.56756898e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 988531.346 1
+NL: NLBGS 1 ; 859477.871 0.869449284
+NL: NLBGS 2 ; 85609.0602 0.0866022718
+NL: NLBGS 3 ; 8063.13847 0.00815668467
+NL: NLBGS 4 ; 803.265316 0.000812584568
+NL: NLBGS 5 ; 150.301242 0.000152044994
+NL: NLBGS 6 ; 21.3015565 2.1548691e-05
+NL: NLBGS 7 ; 4.52706233 4.57958399e-06
+NL: NLBGS 8 ; 0.919078695 9.2974158e-07
+NL: NLBGS 9 ; 0.209342371 2.11771101e-07
+NL: NLBGS 10 ; 0.0547998168 5.54355884e-08
+NL: NLBGS 11 ; 0.0130576585 1.32091497e-08
+NL: NLBGS 12 ; 0.00416040711 4.20867495e-09
+NL: NLBGS 13 ; 0.00102334333 1.03521586e-09
+NL: NLBGS 14 ; 0.000382735962 3.87176354e-10
+NL: NLBGS 15 ; 9.63682501e-05 9.74862867e-11
+NL: NLBGS 16 ; 4.12693908e-05 4.17481863e-11
+NL: NLBGS 17 ; 1.05780568e-05 1.07007803e-11
+NL: NLBGS 18 ; 5.08889273e-06 5.14793259e-12
+NL: NLBGS 19 ; 1.32217941e-06 1.33751895e-12
+NL: NLBGS 20 ; 7.05394165e-07 7.13577944e-13
+NL: NLBGS 21 ; 1.85781875e-07 1.87937263e-13
+NL: NLBGS 22 ; 1.10433211e-07 1.11714425e-13
+NL: NLBGS 23 ; 2.9672758e-08 3.00170128e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 1181643.21 1
+NL: NLBGS 1 ; 1116718.81 0.945055836
+NL: NLBGS 2 ; 451761.387 0.382316239
+NL: NLBGS 3 ; 155784.242 0.131836955
+NL: NLBGS 4 ; 2307.86333 0.0019530966
+NL: NLBGS 5 ; 817.909417 0.000692179679
+NL: NLBGS 6 ; 187.927364 0.000159039008
+NL: NLBGS 7 ; 73.3996805 6.21166186e-05
+NL: NLBGS 8 ; 17.0389542 1.44197115e-05
+NL: NLBGS 9 ; 3.39367374 2.8719953e-06
+NL: NLBGS 10 ; 1.02342135 8.6610014e-07
+NL: NLBGS 11 ; 0.145787697 1.23377087e-07
+NL: NLBGS 12 ; 0.0477924972 4.04457935e-08
+NL: NLBGS 13 ; 0.00436621855 3.69503969e-09
+NL: NLBGS 14 ; 0.0015078347 1.27604906e-09
+NL: NLBGS 15 ; 6.28651941e-05 5.32015025e-11
+NL: NLBGS 16 ; 2.28234266e-05 1.93149899e-11
+NL: NLBGS 17 ; 4.29014563e-07 3.63066076e-13
+NL: NLBGS 18 ; 1.15358271e-07 9.76252988e-14
+NL: NLBGS 19 ; 2.11752799e-08 1.79201977e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 928750.533 1
+NL: NLBGS 1 ; 808574.87 0.870605013
+NL: NLBGS 2 ; 88102.8367 0.0948616809
+NL: NLBGS 3 ; 8702.14686 0.00936973552
+NL: NLBGS 4 ; 847.996824 0.000913051238
+NL: NLBGS 5 ; 163.466477 0.000176006873
+NL: NLBGS 6 ; 23.6752413 2.54914969e-05
+NL: NLBGS 7 ; 5.16269234 5.55875034e-06
+NL: NLBGS 8 ; 1.07651508 1.15910037e-06
+NL: NLBGS 9 ; 0.250955336 2.70207475e-07
+NL: NLBGS 10 ; 0.0676694217 7.28607083e-08
+NL: NLBGS 11 ; 0.0164699457 1.77334441e-08
+NL: NLBGS 12 ; 0.00541585596 5.83133551e-09
+NL: NLBGS 13 ; 0.00135845874 1.46267345e-09
+NL: NLBGS 14 ; 0.000525053524 5.65333214e-10
+NL: NLBGS 15 ; 0.000134623586 1.44951288e-10
+NL: NLBGS 16 ; 5.96304733e-05 6.42050488e-11
+NL: NLBGS 17 ; 1.55452012e-05 1.67377575e-11
+NL: NLBGS 18 ; 7.75166867e-06 8.34634102e-12
+NL: NLBGS 19 ; 2.04902788e-06 2.20621986e-12
+NL: NLBGS 20 ; 1.1395729e-06 1.22699569e-12
+NL: NLBGS 21 ; 3.06846606e-07 3.30386465e-13
+NL: NLBGS 22 ; 1.8934943e-07 2.03875447e-13
+NL: NLBGS 23 ; 5.09082253e-08 5.48136701e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 1113271.67 1
+NL: NLBGS 1 ; 1058215.76 0.950545847
+NL: NLBGS 2 ; 441845.095 0.396888835
+NL: NLBGS 3 ; 152471.441 0.136957982
+NL: NLBGS 4 ; 2338.02154 0.00210013567
+NL: NLBGS 5 ; 756.247395 0.000679301753
+NL: NLBGS 6 ; 209.870877 0.000188517217
+NL: NLBGS 7 ; 73.0986197 6.56610797e-05
+NL: NLBGS 8 ; 10.0795461 9.053986e-06
+NL: NLBGS 9 ; 2.99935469 2.69418039e-06
+NL: NLBGS 10 ; 0.439915856 3.9515589e-07
+NL: NLBGS 11 ; 0.125036907 1.1231482e-07
+NL: NLBGS 12 ; 0.0197706474 1.77590502e-08
+NL: NLBGS 13 ; 0.00560666753 5.03620787e-09
+NL: NLBGS 14 ; 0.000915321068 8.22190213e-10
+NL: NLBGS 15 ; 0.000257702096 2.3148177e-10
+NL: NLBGS 16 ; 4.2908275e-05 3.85425016e-11
+NL: NLBGS 17 ; 1.20346391e-05 1.08101548e-11
+NL: NLBGS 18 ; 2.02677621e-06 1.82055852e-12
+NL: NLBGS 19 ; 5.66500935e-07 5.08861361e-13
+NL: NLBGS 20 ; 9.37350004e-08 8.41977778e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 874098.176 1
+NL: NLBGS 1 ; 761845.789 0.8715792
+NL: NLBGS 2 ; 90565.0432 0.103609692
+NL: NLBGS 3 ; 9390.83873 0.0107434599
+NL: NLBGS 4 ; 893.891742 0.00102264456
+NL: NLBGS 5 ; 177.485132 0.000203049425
+NL: NLBGS 6 ; 26.2095025 2.9984621e-05
+NL: NLBGS 7 ; 5.86520028 6.71000174e-06
+NL: NLBGS 8 ; 1.25450732 1.43520185e-06
+NL: NLBGS 9 ; 0.299372161 3.42492605e-07
+NL: NLBGS 10 ; 0.0830871348 9.50546942e-08
+NL: NLBGS 11 ; 0.0206602417 2.36360654e-08
+NL: NLBGS 12 ; 0.00700792158 8.01731633e-09
+NL: NLBGS 13 ; 0.00179284359 2.05107806e-09
+NL: NLBGS 14 ; 0.000715851787 8.18960394e-10
+NL: NLBGS 15 ; 0.000186926641 2.13850854e-10
+NL: NLBGS 16 ; 8.56237549e-05 9.79566796e-11
+NL: NLBGS 17 ; 2.26976719e-05 2.59669595e-11
+NL: NLBGS 18 ; 1.17075776e-05 1.33938932e-11
+NL: NLBGS 19 ; 3.13949717e-06 3.59169857e-12
+NL: NLBGS 20 ; 1.79794648e-06 2.05691595e-12
+NL: NLBGS 21 ; 4.86479013e-07 5.56549627e-13
+NL: NLBGS 22 ; 3.09382048e-07 3.53944278e-13
+NL: NLBGS 23 ; 8.23681147e-08 9.42321092e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 1050032.22 1
+NL: NLBGS 1 ; 1003214.8 0.955413349
+NL: NLBGS 2 ; 430485.26 0.409973381
+NL: NLBGS 3 ; 148525.516 0.141448532
+NL: NLBGS 4 ; 2376.82355 0.00226357202
+NL: NLBGS 5 ; 747.219328 0.000711615618
+NL: NLBGS 6 ; 222.296993 0.000211704925
+NL: NLBGS 7 ; 73.1711809 6.96847005e-05
+NL: NLBGS 8 ; 9.26333437 8.8219525e-06
+NL: NLBGS 9 ; 3.18586704 3.03406598e-06
+NL: NLBGS 10 ; 0.185945211 1.77085243e-07
+NL: NLBGS 11 ; 0.0678872255 6.46525165e-08
+NL: NLBGS 12 ; 0.00130747192 1.24517314e-09
+NL: NLBGS 13 ; 0.000164917467 1.57059435e-10
+NL: NLBGS 14 ; 4.44916412e-05 4.23716914e-11
+NL: NLBGS 15 ; 7.28068909e-06 6.93377684e-12
+NL: NLBGS 16 ; 2.02443463e-06 1.92797382e-12
+NL: NLBGS 17 ; 3.45117556e-07 3.286733e-13
+NL: NLBGS 18 ; 9.45935085e-08 9.00862912e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 824435.72 1
+NL: NLBGS 1 ; 719239.751 0.872402461
+NL: NLBGS 2 ; 92909.1869 0.112694276
+NL: NLBGS 3 ; 10118.1966 0.012272875
+NL: NLBGS 4 ; 940.840009 0.00114119268
+NL: NLBGS 5 ; 192.414468 0.00023338929
+NL: NLBGS 6 ; 28.9270995 3.50871496e-05
+NL: NLBGS 7 ; 6.64494237 8.05998843e-06
+NL: NLBGS 8 ; 1.45693537 1.76719098e-06
+NL: NLBGS 9 ; 0.356017348 4.31831541e-07
+NL: NLBGS 10 ; 0.101676159 1.23328183e-07
+NL: NLBGS 11 ; 0.0258371087 3.13391427e-08
+NL: NLBGS 12 ; 0.00904029359 1.09654317e-08
+NL: NLBGS 13 ; 0.00235947412 2.86192612e-09
+NL: NLBGS 14 ; 0.000973398098 1.18068404e-09
+NL: NLBGS 15 ; 0.000258920165 3.14057432e-10
+NL: NLBGS 16 ; 0.000122674998 1.48798741e-10
+NL: NLBGS 17 ; 3.308354e-05 4.01287077e-11
+NL: NLBGS 18 ; 1.76615509e-05 2.1422593e-11
+NL: NLBGS 19 ; 4.8111775e-06 5.83572179e-12
+NL: NLBGS 20 ; 2.85472025e-06 3.46263533e-12
+NL: NLBGS 21 ; 7.82703255e-07 9.49380571e-13
+NL: NLBGS 22 ; 5.18334207e-07 6.28713912e-13
+NL: NLBGS 23 ; 1.44986956e-07 1.7586205e-13
+NL: NLBGS 24 ; 1.06172116e-07 1.28781558e-13
+NL: NLBGS 25 ; 3.03487954e-08 3.68115969e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 313639.801 1
+NL: NLBGS 1 ; 273641.633 0.872471007
+NL: NLBGS 2 ; 39574.0204 0.126176653
+NL: NLBGS 3 ; 6122.67205 0.0195213491
+NL: NLBGS 4 ; 339.6981 0.00108308352
+NL: NLBGS 5 ; 90.811268 0.00028954
+NL: NLBGS 6 ; 13.4693068 4.2945145e-05
+NL: NLBGS 7 ; 3.93889346 1.25586531e-05
+NL: NLBGS 8 ; 0.96405223 3.07375603e-06
+NL: NLBGS 9 ; 0.293077759 9.34440582e-07
+NL: NLBGS 10 ; 0.0991267934 3.16052978e-07
+NL: NLBGS 11 ; 0.0307421642 9.80174203e-08
+NL: NLBGS 12 ; 0.0131717099 4.19962959e-08
+NL: NLBGS 13 ; 0.00412790382 1.31612882e-08
+NL: NLBGS 14 ; 0.00212741146 6.78297669e-09
+NL: NLBGS 15 ; 0.0006700628 2.1364087e-09
+NL: NLBGS 16 ; 0.000401339062 1.27961776e-09
+NL: NLBGS 17 ; 0.000126616346 4.03699868e-10
+NL: NLBGS 18 ; 8.60125679e-05 2.74239964e-10
+NL: NLBGS 19 ; 2.7121934e-05 8.64747837e-11
+NL: NLBGS 20 ; 2.05192582e-05 6.54230047e-11
+NL: NLBGS 21 ; 6.45805112e-06 2.05906619e-11
+NL: NLBGS 22 ; 5.36835891e-06 1.7116319e-11
+NL: NLBGS 23 ; 1.68512834e-06 5.37281409e-12
+NL: NLBGS 24 ; 1.52320252e-06 4.85653451e-12
+NL: NLBGS 25 ; 4.74787199e-07 1.51379766e-12
+NL: NLBGS 26 ; 4.60258388e-07 1.46747443e-12
+NL: NLBGS 27 ; 1.43859831e-07 4.58678491e-13
+NL: NLBGS 28 ; 1.41797858e-07 4.52104158e-13
+NL: NLBGS 29 ; 4.41166223e-08 1.40660153e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 279650.812 1
+NL: NLBGS 1 ; 242064.076 0.86559404
+NL: NLBGS 2 ; 23077.8911 0.0825239554
+NL: NLBGS 3 ; 2243.58226 0.00802279902
+NL: NLBGS 4 ; 242.460464 0.00086701148
+NL: NLBGS 5 ; 50.1854158 0.000179457429
+NL: NLBGS 6 ; 7.63945894 2.731785e-05
+NL: NLBGS 7 ; 1.7740206 6.34369908e-06
+NL: NLBGS 8 ; 0.393651446 1.40765351e-06
+NL: NLBGS 9 ; 0.0971711785 3.47473258e-07
+NL: NLBGS 10 ; 0.0280945318 1.00462901e-07
+NL: NLBGS 11 ; 0.00720702179 2.57715032e-08
+NL: NLBGS 12 ; 0.00255374823 9.13191781e-09
+NL: NLBGS 13 ; 0.000672444313 2.40458559e-09
+NL: NLBGS 14 ; 0.000281009536 1.00485864e-09
+NL: NLBGS 15 ; 7.53696118e-05 2.69513295e-10
+NL: NLBGS 16 ; 3.61726017e-05 1.29349175e-10
+NL: NLBGS 17 ; 9.82948204e-06 3.51491275e-11
+NL: NLBGS 18 ; 5.31463654e-06 1.90045454e-11
+NL: NLBGS 19 ; 1.4588684e-06 5.2167501e-12
+NL: NLBGS 20 ; 8.72447555e-07 3.1197748e-12
+NL: NLBGS 21 ; 2.42804551e-07 8.68241897e-13
+NL: NLBGS 22 ; 1.60393767e-07 5.73550158e-13
+NL: NLBGS 23 ; 4.80614405e-08 1.71862332e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 16639.6376 1
+NL: NLBGS 1 ; 13980.6799 0.840203386
+NL: NLBGS 2 ; 613.127494 0.0368474067
+NL: NLBGS 3 ; 42.1736725 0.00253453071
+NL: NLBGS 4 ; 9.66898235 0.000581081306
+NL: NLBGS 5 ; 0.93580103 5.62392675e-05
+NL: NLBGS 6 ; 0.0620655585 3.72998258e-06
+NL: NLBGS 7 ; 0.0140420406 8.43891011e-07
+NL: NLBGS 8 ; 0.00177599694 1.0673291e-07
+NL: NLBGS 9 ; 0.000433513784 2.60530785e-08
+NL: NLBGS 10 ; 8.72349521e-05 5.24259927e-09
+NL: NLBGS 11 ; 2.2293619e-05 1.33978994e-09
+NL: NLBGS 12 ; 6.07780819e-06 3.6526085e-10
+NL: NLBGS 13 ; 1.60422716e-06 9.64099821e-11
+NL: NLBGS 14 ; 5.44920863e-07 3.27483612e-11
+NL: NLBGS 15 ; 1.47224882e-07 8.84784185e-12
+NL: NLBGS 16 ; 6.26209543e-08 3.76336046e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 14565.5295 1
+NL: NLBGS 1 ; 12151.8737 0.834289867
+NL: NLBGS 2 ; 795.611407 0.0546228964
+NL: NLBGS 3 ; 123.951442 0.00850991669
+NL: NLBGS 4 ; 9.45493894 0.000649131153
+NL: NLBGS 5 ; 2.09218133 0.000143639223
+NL: NLBGS 6 ; 0.32402757 2.22461924e-05
+NL: NLBGS 7 ; 0.0783065512 5.37615549e-06
+NL: NLBGS 8 ; 0.017893809 1.22850385e-06
+NL: NLBGS 9 ; 0.00454223624 3.11848344e-07
+NL: NLBGS 10 ; 0.00135660121 9.31377892e-08
+NL: NLBGS 11 ; 0.000355502804 2.44071322e-08
+NL: NLBGS 12 ; 0.000130283288 8.94463112e-09
+NL: NLBGS 13 ; 3.48960005e-05 2.39579348e-09
+NL: NLBGS 14 ; 1.5095246e-05 1.03636782e-09
+NL: NLBGS 15 ; 4.10903735e-06 2.82106967e-10
+NL: NLBGS 16 ; 2.03838697e-06 1.39945958e-10
+NL: NLBGS 17 ; 5.58357181e-07 3.83341493e-11
+NL: NLBGS 18 ; 3.16533222e-07 2.1731666e-11
+NL: NLBGS 19 ; 8.85456646e-08 6.07912433e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 7500.1625 1
+NL: NLBGS 1 ; 5296.33769 0.706163059
+NL: NLBGS 2 ; 1325.7385 0.176761304
+NL: NLBGS 3 ; 149.669265 0.0199554697
+NL: NLBGS 4 ; 14.3731967 0.0019163847
+NL: NLBGS 5 ; 2.94977061 0.000393294226
+NL: NLBGS 6 ; 0.451881284 6.02495325e-05
+NL: NLBGS 7 ; 0.10413986 1.38850138e-05
+NL: NLBGS 8 ; 0.0231041145 3.08048186e-06
+NL: NLBGS 9 ; 0.00566500684 7.5531788e-07
+NL: NLBGS 10 ; 0.00163262763 2.17678967e-07
+NL: NLBGS 11 ; 0.000416308744 5.55066298e-08
+NL: NLBGS 12 ; 0.000146798441 1.95727014e-08
+NL: NLBGS 13 ; 3.84484902e-05 5.12635429e-09
+NL: NLBGS 14 ; 1.59685789e-05 2.12909773e-09
+NL: NLBGS 15 ; 4.26185281e-06 5.68234729e-10
+NL: NLBGS 16 ; 2.03275349e-06 2.71027926e-10
+NL: NLBGS 17 ; 5.51963358e-07 7.35935199e-11
+NL: NLBGS 18 ; 2.9222527e-07 3.89625252e-11
+NL: NLBGS 19 ; 7.91691121e-08 1.05556529e-11
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 38235.8249 1
+NL: NLBGS 1 ; 26322.2561 0.68841868
+NL: NLBGS 2 ; 6868.23945 0.179628385
+NL: NLBGS 3 ; 812.022222 0.0212372095
+NL: NLBGS 4 ; 69.0843074 0.00180679527
+NL: NLBGS 5 ; 14.267316 0.000373140009
+NL: NLBGS 6 ; 2.08367625 5.44953917e-05
+NL: NLBGS 7 ; 0.482946511 1.26307334e-05
+NL: NLBGS 8 ; 0.103253399 2.70043603e-06
+NL: NLBGS 9 ; 0.0254522132 6.65664028e-07
+NL: NLBGS 10 ; 0.00710509141 1.85822888e-07
+NL: NLBGS 11 ; 0.00182093311 4.76237433e-08
+NL: NLBGS 12 ; 0.000623648776 1.63105877e-08
+NL: NLBGS 13 ; 0.000164128287 4.29252637e-09
+NL: NLBGS 14 ; 6.63226124e-05 1.73456732e-09
+NL: NLBGS 15 ; 1.77841001e-05 4.65116162e-10
+NL: NLBGS 16 ; 8.25302659e-06 2.15845392e-10
+NL: NLBGS 17 ; 2.24157864e-06 5.86250891e-11
+NL: NLBGS 18 ; 1.17043371e-06 3.06109183e-11
+NL: NLBGS 19 ; 3.19396304e-07 8.35332584e-12
+NL: NLBGS 20 ; 1.88313895e-07 4.92506428e-12
+NL: NLBGS 21 ; 5.34572476e-08 1.39809322e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 181984.254 1
+NL: NLBGS 1 ; 121049.629 0.665165401
+NL: NLBGS 2 ; 34883.2357 0.191682714
+NL: NLBGS 3 ; 5009.63262 0.0275278356
+NL: NLBGS 4 ; 232.954303 0.00128007944
+NL: NLBGS 5 ; 48.6269193 0.000267203993
+NL: NLBGS 6 ; 5.23240792 2.87519816e-05
+NL: NLBGS 7 ; 1.22634995 6.73876954e-06
+NL: NLBGS 8 ; 0.206827157 1.13651128e-06
+NL: NLBGS 9 ; 0.0515597076 2.83319609e-07
+NL: NLBGS 10 ; 0.0117150485 6.43739676e-08
+NL: NLBGS 11 ; 0.00303677122 1.66869998e-08
+NL: NLBGS 12 ; 0.00086064438 4.72922443e-09
+NL: NLBGS 13 ; 0.000229154071 1.25919725e-09
+NL: NLBGS 14 ; 7.73268227e-05 4.24909414e-10
+NL: NLBGS 15 ; 2.09875792e-05 1.15326347e-10
+NL: NLBGS 16 ; 8.17091514e-06 4.48990226e-11
+NL: NLBGS 17 ; 2.24700321e-06 1.23472397e-11
+NL: NLBGS 18 ; 9.9212233e-07 5.45169325e-12
+NL: NLBGS 19 ; 2.77372544e-07 1.52415683e-12
+NL: NLBGS 20 ; 1.30630231e-07 7.17810627e-13
+NL: NLBGS 21 ; 3.56443715e-08 1.95865141e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 286132.989 1
+NL: NLBGS 1 ; 186751.623 0.652674212
+NL: NLBGS 2 ; 60937.5144 0.212969202
+NL: NLBGS 3 ; 11236.0078 0.0392684808
+NL: NLBGS 4 ; 229.561002 0.000802287786
+NL: NLBGS 5 ; 48.9676098 0.000171135841
+NL: NLBGS 6 ; 2.76730024 9.6713778e-06
+NL: NLBGS 7 ; 0.656464118 2.29426226e-06
+NL: NLBGS 8 ; 0.0662999952 2.31710421e-07
+NL: NLBGS 9 ; 0.0167261533 5.84558717e-08
+NL: NLBGS 10 ; 0.00243994571 8.52731355e-09
+NL: NLBGS 11 ; 0.00064016141 2.23728628e-09
+NL: NLBGS 12 ; 0.000121149846 4.2340398e-10
+NL: NLBGS 13 ; 3.26648953e-05 1.14159837e-10
+NL: NLBGS 14 ; 7.53935784e-06 2.63491388e-11
+NL: NLBGS 15 ; 2.07191589e-06 7.24109406e-12
+NL: NLBGS 16 ; 5.57065387e-07 1.94687579e-12
+NL: NLBGS 17 ; 1.53833526e-07 5.37629465e-13
+NL: NLBGS 18 ; 4.78532267e-08 1.67241208e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 22159.0205 1
+NL: NLBGS 1 ; 17459.8174 0.787932728
+NL: NLBGS 2 ; 227.93288 0.0102862345
+NL: NLBGS 3 ; 30.2069363 0.00136318915
+NL: NLBGS 4 ; 3.55939741 0.000160629727
+NL: NLBGS 5 ; 0.236917407 1.06916913e-05
+NL: NLBGS 6 ; 0.0278567857 1.25713074e-06
+NL: NLBGS 7 ; 0.00198525894 8.95914576e-08
+NL: NLBGS 8 ; 0.000220996577 9.97321055e-09
+NL: NLBGS 9 ; 1.69584075e-05 7.65304926e-10
+NL: NLBGS 10 ; 1.82595141e-06 8.24021718e-11
+NL: NLBGS 11 ; 1.48424454e-07 6.69815051e-12
+NL: NLBGS 12 ; 1.63360144e-08 7.3721735e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 42404.961 1
+NL: NLBGS 1 ; 29523.0743 0.696217462
+NL: NLBGS 2 ; 9832.58992 0.231873576
+NL: NLBGS 3 ; 1858.62282 0.0438303155
+NL: NLBGS 4 ; 26.376373 0.00062201149
+NL: NLBGS 5 ; 5.77162042 0.000136107198
+NL: NLBGS 6 ; 0.293831883 6.92918651e-06
+NL: NLBGS 7 ; 0.0712473035 1.68016434e-06
+NL: NLBGS 8 ; 0.00682607313 1.60973456e-07
+NL: NLBGS 9 ; 0.001754688 4.13793094e-08
+NL: NLBGS 10 ; 0.00024649449 5.81286917e-09
+NL: NLBGS 11 ; 6.57691545e-05 1.55097783e-09
+NL: NLBGS 12 ; 1.20612119e-05 2.84429266e-10
+NL: NLBGS 13 ; 3.30209858e-06 7.78705723e-11
+NL: NLBGS 14 ; 7.39929489e-07 1.74491256e-11
+NL: NLBGS 15 ; 2.07141795e-07 4.88484815e-12
+NL: NLBGS 16 ; 5.24651046e-08 1.23723978e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 215971.583 1
+NL: NLBGS 1 ; 169383.839 0.784287623
+NL: NLBGS 2 ; 69469.9443 0.321662431
+NL: NLBGS 3 ; 17534.5735 0.0811892624
+NL: NLBGS 4 ; 197.942825 0.000916522545
+NL: NLBGS 5 ; 49.4927347 0.00022916318
+NL: NLBGS 6 ; 1.07839292 4.99321671e-06
+NL: NLBGS 7 ; 0.0969037183 4.48687355e-07
+NL: NLBGS 8 ; 0.028403992 1.31517265e-07
+NL: NLBGS 9 ; 0.0027097947 1.25469966e-08
+NL: NLBGS 10 ; 0.000453304798 2.09890946e-09
+NL: NLBGS 11 ; 5.74997393e-05 2.66237523e-10
+NL: NLBGS 12 ; 1.00100399e-05 4.6348875e-11
+NL: NLBGS 13 ; 1.26785012e-06 5.8704488e-12
+NL: NLBGS 14 ; 2.21141149e-07 1.02393632e-12
+NL: NLBGS 15 ; 2.85361178e-08 1.3212904e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 165069.124 1
+NL: NLBGS 1 ; 124127.047 0.751970107
+NL: NLBGS 2 ; 41736.8127 0.252844456
+NL: NLBGS 3 ; 8172.92311 0.0495121251
+NL: NLBGS 4 ; 74.4133055 0.000450800875
+NL: NLBGS 5 ; 17.4166281 0.00010551112
+NL: NLBGS 6 ; 0.985481322 5.970113e-06
+NL: NLBGS 7 ; 0.2486676 1.50644527e-06
+NL: NLBGS 8 ; 0.0256003605 1.55088729e-07
+NL: NLBGS 9 ; 0.00677181913 4.10241417e-08
+NL: NLBGS 10 ; 0.00099511384 6.02846745e-09
+NL: NLBGS 11 ; 0.000271842808 1.64684225e-09
+NL: NLBGS 12 ; 5.12860401e-05 3.10694326e-10
+NL: NLBGS 13 ; 1.43379472e-05 8.68602612e-11
+NL: NLBGS 14 ; 3.26647514e-06 1.9788529e-11
+NL: NLBGS 15 ; 9.25840161e-07 5.60880279e-12
+NL: NLBGS 16 ; 2.48398388e-07 1.50481436e-12
+NL: NLBGS 17 ; 6.99657828e-08 4.2385748e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 433445.234 1
+NL: NLBGS 1 ; 410533.706 0.947140895
+NL: NLBGS 2 ; 261944.424 0.604331074
+NL: NLBGS 3 ; 99343.5356 0.229195127
+NL: NLBGS 4 ; 2275.05955 0.00524878201
+NL: NLBGS 5 ; 1015.65298 0.00234320947
+NL: NLBGS 6 ; 328.275573 0.000757363441
+NL: NLBGS 7 ; 103.161044 0.000238002488
+NL: NLBGS 8 ; 21.6112576 4.98592576e-05
+NL: NLBGS 9 ; 6.83422854 1.5767225e-05
+NL: NLBGS 10 ; 1.43944294 3.32093383e-06
+NL: NLBGS 11 ; 0.442924314 1.02186915e-06
+NL: NLBGS 12 ; 0.0958208463 2.21067943e-07
+NL: NLBGS 13 ; 0.0292039037 6.73762253e-08
+NL: NLBGS 14 ; 0.00643019188 1.48350734e-08
+NL: NLBGS 15 ; 0.00195036382 4.49967764e-09
+NL: NLBGS 16 ; 0.00043361154 1.00038368e-09
+NL: NLBGS 17 ; 0.000131165778 3.02612112e-10
+NL: NLBGS 18 ; 2.93159788e-05 6.76347934e-11
+NL: NLBGS 19 ; 8.85412244e-06 2.04273153e-11
+NL: NLBGS 20 ; 1.9837395e-06 4.57667855e-12
+NL: NLBGS 21 ; 5.98688892e-07 1.38123307e-12
+NL: NLBGS 22 ; 1.32612927e-07 3.05950824e-13
+NL: NLBGS 23 ; 3.77068916e-08 8.69934393e-14
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 340132.436 1
+NL: NLBGS 1 ; 268396.707 0.789094714
+NL: NLBGS 2 ; 89909.6781 0.264337266
+NL: NLBGS 3 ; 17971.9232 0.0528380163
+NL: NLBGS 4 ; 97.9116937 0.000287863442
+NL: NLBGS 5 ; 25.2259174 7.41649861e-05
+NL: NLBGS 6 ; 1.71126769 5.03118054e-06
+NL: NLBGS 7 ; 0.448618032 1.31895105e-06
+NL: NLBGS 8 ; 0.0517598364 1.52175538e-07
+NL: NLBGS 9 ; 0.0140480126 4.13015964e-08
+NL: NLBGS 10 ; 0.00224148452 6.59003459e-09
+NL: NLBGS 11 ; 0.000624460878 1.83593452e-09
+NL: NLBGS 12 ; 0.000125176226 3.68022019e-10
+NL: NLBGS 13 ; 3.55565447e-05 1.04537354e-10
+NL: NLBGS 14 ; 8.48139682e-06 2.49355719e-11
+NL: NLBGS 15 ; 2.44499704e-06 7.18836777e-12
+NL: NLBGS 16 ; 6.67031095e-07 1.96109228e-12
+NL: NLBGS 17 ; 1.95860019e-07 5.75834582e-13
+NL: NLBGS 18 ; 5.85623708e-08 1.72175202e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 370698.936 1
+NL: NLBGS 1 ; 348241.717 0.939419252
+NL: NLBGS 2 ; 206488.964 0.55702605
+NL: NLBGS 3 ; 76489.388 0.206338299
+NL: NLBGS 4 ; 1326.07729 0.00357723523
+NL: NLBGS 5 ; 563.101533 0.00151902657
+NL: NLBGS 6 ; 175.938075 0.000474611761
+NL: NLBGS 7 ; 59.9679183 0.000161769869
+NL: NLBGS 8 ; 10.8288284 2.9211922e-05
+NL: NLBGS 9 ; 3.20320618 8.64099102e-06
+NL: NLBGS 10 ; 0.690927539 1.86385088e-06
+NL: NLBGS 11 ; 0.199315498 5.37674859e-07
+NL: NLBGS 12 ; 0.0449057278 1.21138e-07
+NL: NLBGS 13 ; 0.0127725619 3.44553509e-08
+NL: NLBGS 14 ; 0.00294153544 7.93510625e-09
+NL: NLBGS 15 ; 0.000829676555 2.23814118e-09
+NL: NLBGS 16 ; 0.000193331465 5.21532291e-10
+NL: NLBGS 17 ; 5.42657731e-05 1.46387723e-10
+NL: NLBGS 18 ; 1.27247129e-05 3.4326273e-11
+NL: NLBGS 19 ; 3.56022634e-06 9.60409108e-12
+NL: NLBGS 20 ; 8.38825089e-07 2.26282033e-12
+NL: NLBGS 21 ; 2.35700063e-07 6.35826111e-13
+NL: NLBGS 22 ; 5.66272e-08 1.52757924e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 300027.152 1
+NL: NLBGS 1 ; 242709.087 0.808957074
+NL: NLBGS 2 ; 78603.2207 0.261987024
+NL: NLBGS 3 ; 16065.2129 0.0535458634
+NL: NLBGS 4 ; 63.1199133 0.00021038067
+NL: NLBGS 5 ; 17.013075 5.67051179e-05
+NL: NLBGS 6 ; 1.12802207 3.7597333e-06
+NL: NLBGS 7 ; 0.30308764 1.0102007e-06
+NL: NLBGS 8 ; 0.0347258785 1.15742453e-07
+NL: NLBGS 9 ; 0.00963468353 3.21127054e-08
+NL: NLBGS 10 ; 0.00155693974 5.18932946e-09
+NL: NLBGS 11 ; 0.000442764849 1.47574927e-09
+NL: NLBGS 12 ; 9.07317863e-05 3.02411917e-10
+NL: NLBGS 13 ; 2.62792426e-05 8.75895478e-11
+NL: NLBGS 14 ; 6.43942401e-06 2.14628042e-11
+NL: NLBGS 15 ; 1.89041455e-06 6.30081159e-12
+NL: NLBGS 16 ; 5.29062703e-07 1.76338275e-12
+NL: NLBGS 17 ; 1.53616381e-07 5.12008262e-13
+NL: NLBGS 18 ; 4.89178567e-08 1.63044766e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 321885.627 1
+NL: NLBGS 1 ; 298620.22 0.927721509
+NL: NLBGS 2 ; 162286.915 0.50417571
+NL: NLBGS 3 ; 58520.4718 0.181805172
+NL: NLBGS 4 ; 749.729568 0.00232918001
+NL: NLBGS 5 ; 332.279928 0.00103229191
+NL: NLBGS 6 ; 82.1980073 0.000255364018
+NL: NLBGS 7 ; 39.5795513 0.000122961536
+NL: NLBGS 8 ; 10.447596 3.2457479e-05
+NL: NLBGS 9 ; 0.845981295 2.62820463e-06
+NL: NLBGS 10 ; 0.351118584 1.09081784e-06
+NL: NLBGS 11 ; 0.0227095282 7.05515445e-08
+NL: NLBGS 12 ; 0.00848326827 2.63549147e-08
+NL: NLBGS 13 ; 0.00209380568 6.50481259e-09
+NL: NLBGS 14 ; 0.000422326966 1.31204046e-09
+NL: NLBGS 15 ; 0.000116247688 3.61145941e-10
+NL: NLBGS 16 ; 2.57469999e-05 7.99880382e-11
+NL: NLBGS 17 ; 7.11658133e-06 2.21090373e-11
+NL: NLBGS 18 ; 1.57709014e-06 4.89953574e-12
+NL: NLBGS 19 ; 4.37423754e-07 1.35894155e-12
+NL: NLBGS 20 ; 9.73934686e-08 3.0257166e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 268921.334 1
+NL: NLBGS 1 ; 221430.96 0.823404214
+NL: NLBGS 2 ; 68678.9464 0.255386753
+NL: NLBGS 3 ; 14282.9844 0.0531121283
+NL: NLBGS 4 ; 34.2394083 0.000127321279
+NL: NLBGS 5 ; 9.69632468 3.60563609e-05
+NL: NLBGS 6 ; 0.38099287 1.41674468e-06
+NL: NLBGS 7 ; 0.104955307 3.9028256e-07
+NL: NLBGS 8 ; 0.00553393232 2.0578257e-08
+NL: NLBGS 9 ; 0.00161864201 6.01901674e-09
+NL: NLBGS 10 ; 0.0001615432 6.00708014e-10
+NL: NLBGS 11 ; 4.81474085e-05 1.79039006e-10
+NL: NLBGS 12 ; 7.39124859e-06 2.74847982e-11
+NL: NLBGS 13 ; 2.23996412e-06 8.32944e-12
+NL: NLBGS 14 ; 4.71295386e-07 1.75253997e-12
+NL: NLBGS 15 ; 1.46217361e-07 5.43717966e-13
+NL: NLBGS 16 ; 3.78685149e-08 1.40816328e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 23072.1937 1
+NL: NLBGS 1 ; 15760.4248 0.683091738
+NL: NLBGS 2 ; 6012.94038 0.260614161
+NL: NLBGS 3 ; 1277.08541 0.0553517118
+NL: NLBGS 4 ; 19.3189174 0.000837324689
+NL: NLBGS 5 ; 4.69992687 0.000203705245
+NL: NLBGS 6 ; 0.268988261 1.16585473e-05
+NL: NLBGS 7 ; 0.0715048796 3.09917994e-06
+NL: NLBGS 8 ; 0.0076843772 3.33057936e-07
+NL: NLBGS 9 ; 0.00214738672 9.30724991e-08
+NL: NLBGS 10 ; 0.000338193145 1.46580403e-08
+NL: NLBGS 11 ; 9.75171077e-05 4.22660754e-09
+NL: NLBGS 12 ; 2.00572972e-05 8.69327706e-10
+NL: NLBGS 13 ; 5.90964978e-06 2.56137317e-10
+NL: NLBGS 14 ; 1.4846451e-06 6.43478085e-11
+NL: NLBGS 15 ; 4.42902007e-07 1.91963544e-11
+NL: NLBGS 16 ; 1.28825433e-07 5.58357976e-12
+NL: NLBGS 17 ; 3.69299833e-08 1.60062731e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 8502.92997 1
+NL: NLBGS 1 ; 6338.80492 0.745484784
+NL: NLBGS 2 ; 2311.35018 0.27182985
+NL: NLBGS 3 ; 487.381588 0.0573192523
+NL: NLBGS 4 ; 7.85474447 0.000923769159
+NL: NLBGS 5 ; 1.93056909 0.000227047512
+NL: NLBGS 6 ; 0.121317841 1.4267769e-05
+NL: NLBGS 7 ; 0.0325422775 3.827184e-06
+NL: NLBGS 8 ; 0.00376492386 4.42779591e-07
+NL: NLBGS 9 ; 0.00105876533 1.24517706e-07
+NL: NLBGS 10 ; 0.00017720151 2.08400529e-08
+NL: NLBGS 11 ; 5.13212343e-05 6.03571175e-09
+NL: NLBGS 12 ; 1.11272378e-05 1.30863571e-09
+NL: NLBGS 13 ; 3.28504853e-06 3.86343124e-10
+NL: NLBGS 14 ; 8.60868903e-07 1.01243795e-10
+NL: NLBGS 15 ; 2.53925995e-07 2.98633525e-11
+NL: NLBGS 16 ; 7.67700163e-08 9.02865443e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 15899.2002 1
+NL: NLBGS 1 ; 10500.0449 0.660413401
+NL: NLBGS 2 ; 3907.76667 0.245783852
+NL: NLBGS 3 ; 826.35973 0.0519749244
+NL: NLBGS 4 ; 17.5013572 0.00110076966
+NL: NLBGS 5 ; 4.27396032 0.000268816057
+NL: NLBGS 6 ; 0.286525875 1.80214017e-05
+NL: NLBGS 7 ; 0.0762782259 4.79761402e-06
+NL: NLBGS 8 ; 0.00909370638 5.71959989e-07
+NL: NLBGS 9 ; 0.00254073625 1.59802771e-07
+NL: NLBGS 10 ; 0.000433754344 2.72815197e-08
+NL: NLBGS 11 ; 0.000124927775 7.85748802e-09
+NL: NLBGS 12 ; 2.75092653e-05 1.73022951e-09
+NL: NLBGS 13 ; 8.08800203e-06 5.08704961e-10
+NL: NLBGS 14 ; 2.15795386e-06 1.35727195e-10
+NL: NLBGS 15 ; 6.43631784e-07 4.04820227e-11
+NL: NLBGS 16 ; 2.02330839e-07 1.27258501e-11
+NL: NLBGS 17 ; 6.25895874e-08 3.93665005e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 7726.50135 1
+NL: NLBGS 1 ; 5103.51585 0.660520929
+NL: NLBGS 2 ; 1905.03728 0.246558849
+NL: NLBGS 3 ; 405.446837 0.052474829
+NL: NLBGS 4 ; 8.47946168 0.00109745165
+NL: NLBGS 5 ; 2.06962869 0.000267861041
+NL: NLBGS 6 ; 0.134678512 1.74307239e-05
+NL: NLBGS 7 ; 0.0358532935 4.64030121e-06
+NL: NLBGS 8 ; 0.00417362101 5.40169583e-07
+NL: NLBGS 9 ; 0.00116659063 1.50985624e-07
+NL: NLBGS 10 ; 0.00019527419 2.52733005e-08
+NL: NLBGS 11 ; 5.62747158e-05 7.28333734e-09
+NL: NLBGS 12 ; 1.21866248e-05 1.57725007e-09
+NL: NLBGS 13 ; 3.58487154e-06 4.63970869e-10
+NL: NLBGS 14 ; 9.45819072e-07 1.22412335e-10
+NL: NLBGS 15 ; 2.82172117e-07 3.65200373e-11
+NL: NLBGS 16 ; 8.68371214e-08 1.1238867e-11
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 7463.20354 1
+NL: NLBGS 1 ; 5115.18056 0.685386715
+NL: NLBGS 2 ; 1907.60786 0.255601746
+NL: NLBGS 3 ; 396.593657 0.0531398688
+NL: NLBGS 4 ; 6.90897856 0.000925738997
+NL: NLBGS 5 ; 1.66758343 0.000223440701
+NL: NLBGS 6 ; 0.103464872 1.38633325e-05
+NL: NLBGS 7 ; 0.0273775983 3.66834405e-06
+NL: NLBGS 8 ; 0.00312804463 4.19128946e-07
+NL: NLBGS 9 ; 0.00087057587 1.16649086e-07
+NL: NLBGS 10 ; 0.000144445107 1.93543035e-08
+NL: NLBGS 11 ; 4.14854731e-05 5.55866832e-09
+NL: NLBGS 12 ; 8.94333979e-06 1.19832452e-09
+NL: NLBGS 13 ; 2.62313291e-06 3.51475462e-10
+NL: NLBGS 14 ; 6.88530697e-07 9.22567223e-11
+NL: NLBGS 15 ; 2.03051944e-07 2.72070757e-11
+NL: NLBGS 16 ; 6.76278652e-08 9.0615062e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 3284.53879 1
+NL: NLBGS 1 ; 2199.80902 0.669746702
+NL: NLBGS 2 ; 813.786844 0.247762896
+NL: NLBGS 3 ; 169.173285 0.0515059484
+NL: NLBGS 4 ; 3.113286 0.000947860933
+NL: NLBGS 5 ; 0.749114837 0.000228073067
+NL: NLBGS 6 ; 0.0467699358 1.42394226e-05
+NL: NLBGS 7 ; 0.0123395751 3.75686692e-06
+NL: NLBGS 8 ; 0.00141014414 4.29327899e-07
+NL: NLBGS 9 ; 0.00039152212 1.19201552e-07
+NL: NLBGS 10 ; 6.49084254e-05 1.97618081e-08
+NL: NLBGS 11 ; 1.86063013e-05 5.664814e-09
+NL: NLBGS 12 ; 4.00786125e-06 1.2202204e-09
+NL: NLBGS 13 ; 1.17447675e-06 3.57577372e-10
+NL: NLBGS 14 ; 3.06932133e-07 9.34475592e-11
+NL: NLBGS 15 ; 9.01388039e-08 2.74433671e-11
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 208.447288 1
+NL: NLBGS 1 ; 139.877808 0.671046428
+NL: NLBGS 2 ; 48.0528646 0.230527656
+NL: NLBGS 3 ; 9.7985926 0.0470075323
+NL: NLBGS 4 ; 0.142856953 0.000685338506
+NL: NLBGS 5 ; 0.0333482698 0.000159984187
+NL: NLBGS 6 ; 0.00175539112 8.4212711e-06
+NL: NLBGS 7 ; 0.000453762693 2.17687022e-06
+NL: NLBGS 8 ; 4.63790376e-05 2.22497679e-07
+NL: NLBGS 9 ; 1.27044381e-05 6.09479655e-08
+NL: NLBGS 10 ; 1.94313845e-06 9.32196565e-09
+NL: NLBGS 11 ; 5.50139217e-07 2.63922464e-09
+NL: NLBGS 12 ; 1.13096542e-07 5.42566629e-10
+NL: NLBGS 13 ; 3.40923966e-08 1.63554043e-10
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 238.542091 1
+NL: NLBGS 1 ; 163.965201 0.687363812
+NL: NLBGS 2 ; 32.2773602 0.135310963
+NL: NLBGS 3 ; 5.42541192 0.0227440444
+NL: NLBGS 4 ; 0.0801303992 0.000335917232
+NL: NLBGS 5 ; 0.0204701165 8.58134361e-05
+NL: NLBGS 6 ; 0.00114270633 4.7903761e-06
+NL: NLBGS 7 ; 0.000321058041 1.34591777e-06
+NL: NLBGS 8 ; 3.79452053e-05 1.5907132e-07
+NL: NLBGS 9 ; 1.1037772e-05 4.62718002e-08
+NL: NLBGS 10 ; 1.94470373e-06 8.15245529e-09
+NL: NLBGS 11 ; 5.76392817e-07 2.41631493e-09
+NL: NLBGS 12 ; 1.34794887e-07 5.65077998e-10
+NL: NLBGS 13 ; 3.93776584e-08 1.65076352e-10
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 563.226752 1
+NL: NLBGS 1 ; 439.239812 0.779863191
+NL: NLBGS 2 ; 61.0698875 0.108428599
+NL: NLBGS 3 ; 16.2861488 0.0289157942
+NL: NLBGS 4 ; 0.932960912 0.00165645703
+NL: NLBGS 5 ; 0.267749699 0.000475385266
+NL: NLBGS 6 ; 0.0247465211 4.39370485e-05
+NL: NLBGS 7 ; 0.00722768288 1.28326342e-05
+NL: NLBGS 8 ; 0.000823640762 1.46236087e-06
+NL: NLBGS 9 ; 0.000243120508 4.31656534e-07
+NL: NLBGS 10 ; 3.20783061e-05 5.69545142e-08
+NL: NLBGS 11 ; 9.56398081e-06 1.69806934e-08
+NL: NLBGS 12 ; 1.47427148e-06 2.61754519e-09
+NL: NLBGS 13 ; 4.43925094e-07 7.88181833e-10
+NL: NLBGS 14 ; 8.68464628e-08 1.54194492e-10
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 2532.35989 1
+NL: NLBGS 1 ; 2051.50995 0.81011785
+NL: NLBGS 2 ; 468.356612 0.184948677
+NL: NLBGS 3 ; 118.76996 0.0469009008
+NL: NLBGS 4 ; 7.17562067 0.00283357066
+NL: NLBGS 5 ; 2.00623772 0.000792240364
+NL: NLBGS 6 ; 0.245338225 9.68812632e-05
+NL: NLBGS 7 ; 0.0711915299 2.81127222e-05
+NL: NLBGS 8 ; 0.012836054 5.06881115e-06
+NL: NLBGS 9 ; 0.00381206475 1.50534084e-06
+NL: NLBGS 10 ; 0.000900317218 3.55524988e-07
+NL: NLBGS 11 ; 0.000271641999 1.07268323e-07
+NL: NLBGS 12 ; 7.87327706e-05 3.1090672e-08
+NL: NLBGS 13 ; 2.40170172e-05 9.48404582e-09
+NL: NLBGS 14 ; 8.18927172e-06 3.23384988e-09
+NL: NLBGS 15 ; 2.51754625e-06 9.94150265e-10
+NL: NLBGS 16 ; 9.77815162e-07 3.86128041e-10
+NL: NLBGS 17 ; 3.00759532e-07 1.18766504e-10
+NL: NLBGS 18 ; 1.29005751e-07 5.09428979e-11
+NL: NLBGS 19 ; 3.93532336e-08 1.55401426e-11
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 12415.9781 1
+NL: NLBGS 1 ; 10105.9912 0.813950467
+NL: NLBGS 2 ; 2471.43654 0.199052908
+NL: NLBGS 3 ; 620.883506 0.0500068139
+NL: NLBGS 4 ; 37.0143382 0.00298118585
+NL: NLBGS 5 ; 10.2821457 0.000828138195
+NL: NLBGS 6 ; 1.25170538 0.000100814078
+NL: NLBGS 7 ; 0.361588715 2.91228538e-05
+NL: NLBGS 8 ; 0.0650331758 5.23786168e-06
+NL: NLBGS 9 ; 0.0192451741 1.55003287e-06
+NL: NLBGS 10 ; 0.00453325396 3.65114526e-07
+NL: NLBGS 11 ; 0.00136363758 1.09829251e-07
+NL: NLBGS 12 ; 0.00039391721 3.17266354e-08
+NL: NLBGS 13 ; 0.000119845404 9.65251411e-09
+NL: NLBGS 14 ; 4.06868393e-05 3.27697416e-09
+NL: NLBGS 15 ; 1.24760662e-05 1.00483958e-09
+NL: NLBGS 16 ; 4.83137836e-06 3.89125877e-10
+NL: NLBGS 17 ; 1.49014273e-06 1.20018151e-10
+NL: NLBGS 18 ; 6.42535777e-07 5.17507177e-11
+NL: NLBGS 19 ; 1.98447637e-07 1.59832464e-11
+NL: NLBGS 20 ; 9.25866283e-08 7.45705474e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 59587.9687 1
+NL: NLBGS 1 ; 48414.6436 0.812490251
+NL: NLBGS 2 ; 11713.1791 0.196569532
+NL: NLBGS 3 ; 2926.29476 0.0491088188
+NL: NLBGS 4 ; 177.517826 0.00297908839
+NL: NLBGS 5 ; 49.0079535 0.000822447125
+NL: NLBGS 6 ; 6.01905249 0.000101011204
+NL: NLBGS 7 ; 1.73006954 2.90338734e-05
+NL: NLBGS 8 ; 0.313109842 5.25458156e-06
+NL: NLBGS 9 ; 0.0922494387 1.54812189e-06
+NL: NLBGS 10 ; 0.0218455303 3.6660975e-07
+NL: NLBGS 11 ; 0.00654483207 1.09834791e-07
+NL: NLBGS 12 ; 0.0019003373 3.18912919e-08
+NL: NLBGS 13 ; 0.000575993304 9.66626849e-09
+NL: NLBGS 14 ; 0.000196595681 3.29925127e-09
+NL: NLBGS 15 ; 6.007452e-05 1.00816526e-09
+NL: NLBGS 16 ; 2.33943929e-05 3.92602624e-10
+NL: NLBGS 17 ; 7.18881925e-06 1.20642126e-10
+NL: NLBGS 18 ; 3.12504332e-06 5.24441995e-11
+NL: NLBGS 19 ; 9.64427197e-07 1.61849316e-11
+NL: NLBGS 20 ; 4.60778307e-07 7.73274064e-12
+NL: NLBGS 21 ; 1.43838778e-07 2.4138896e-12
+NL: NLBGS 22 ; 7.79850854e-08 1.30873878e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 185396.548 1
+NL: NLBGS 1 ; 149482.245 0.806283866
+NL: NLBGS 2 ; 33871.9135 0.182699807
+NL: NLBGS 3 ; 8332.69491 0.0449452539
+NL: NLBGS 4 ; 523.618088 0.00282431412
+NL: NLBGS 5 ; 141.903205 0.000765403706
+NL: NLBGS 6 ; 17.5934692 9.48964227e-05
+NL: NLBGS 7 ; 4.97465798 2.68325276e-05
+NL: NLBGS 8 ; 0.901438725 4.86221958e-06
+NL: NLBGS 9 ; 0.261624822 1.41116339e-06
+NL: NLBGS 10 ; 0.0618635642 3.33682396e-07
+NL: NLBGS 11 ; 0.0182777117 9.85871203e-08
+NL: NLBGS 12 ; 0.00529718364 2.85721806e-08
+NL: NLBGS 13 ; 0.00158481057 8.54822049e-09
+NL: NLBGS 14 ; 0.000540300481 2.91429634e-09
+NL: NLBGS 15 ; 0.000163085021 8.79655113e-10
+NL: NLBGS 16 ; 6.35147319e-05 3.42588536e-10
+NL: NLBGS 17 ; 1.92900675e-05 1.04047609e-10
+NL: NLBGS 18 ; 8.39093604e-06 4.52593975e-11
+NL: NLBGS 19 ; 2.55738151e-06 1.37941161e-11
+NL: NLBGS 20 ; 1.22240695e-06 6.59347203e-12
+NL: NLBGS 21 ; 3.74430349e-07 2.01961878e-12
+NL: NLBGS 22 ; 1.94393668e-07 1.04852906e-12
+NL: NLBGS 23 ; 5.95825365e-08 3.21378889e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 2323.5497 1
+NL: NLBGS 1 ; 1857.35557 0.79936124
+NL: NLBGS 2 ; 32.947864 0.0141799696
+NL: NLBGS 3 ; 8.3780171 0.0036056974
+NL: NLBGS 4 ; 1.01397489 0.000436390445
+NL: NLBGS 5 ; 0.074055753 3.1871818e-05
+NL: NLBGS 6 ; 0.00940552903 4.04791386e-06
+NL: NLBGS 7 ; 0.000666970939 2.87048278e-07
+NL: NLBGS 8 ; 8.60879307e-05 3.70501784e-08
+NL: NLBGS 9 ; 5.89031855e-06 2.53505168e-09
+NL: NLBGS 10 ; 7.67818258e-07 3.30450543e-10
+NL: NLBGS 11 ; 5.00770541e-08 2.15519617e-11
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 168.236918 1
+NL: NLBGS 1 ; 112.604388 0.669320325
+NL: NLBGS 2 ; 47.4155624 0.281838036
+NL: NLBGS 3 ; 9.8490243 0.0585425865
+NL: NLBGS 4 ; 0.307760192 0.00182932615
+NL: NLBGS 5 ; 0.075212247 0.00044706149
+NL: NLBGS 6 ; 0.00634391119 3.77081991e-05
+NL: NLBGS 7 ; 0.00167791927 9.97354975e-06
+NL: NLBGS 8 ; 0.000233054088 1.38527317e-06
+NL: NLBGS 9 ; 6.4411846e-05 3.82863921e-07
+NL: NLBGS 10 ; 1.23324079e-05 7.33038153e-08
+NL: NLBGS 11 ; 3.50872335e-06 2.08558466e-08
+NL: NLBGS 12 ; 8.43284525e-07 5.01248203e-09
+NL: NLBGS 13 ; 2.4374714e-07 1.44883265e-09
+NL: NLBGS 14 ; 7.04300154e-08 4.18635912e-10
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 24.6333233 1
+NL: NLBGS 1 ; 16.6473409 0.675805723
+NL: NLBGS 2 ; 7.05321105 0.286328035
+NL: NLBGS 3 ; 1.46534803 0.0594864127
+NL: NLBGS 4 ; 0.045758672 0.00185759231
+NL: NLBGS 5 ; 0.0111931669 0.000454391265
+NL: NLBGS 6 ; 0.000946342968 3.84171862e-05
+NL: NLBGS 7 ; 0.000250472538 1.01680368e-05
+NL: NLBGS 8 ; 3.48664303e-05 1.41541724e-06
+NL: NLBGS 9 ; 9.6411572e-06 3.91386785e-07
+NL: NLBGS 10 ; 1.84815572e-06 7.50266499e-08
+NL: NLBGS 11 ; 5.27108919e-07 2.13982057e-08
+NL: NLBGS 12 ; 1.27205661e-07 5.16396669e-09
+NL: NLBGS 13 ; 3.8084208e-08 1.54604426e-09
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 66.4107559 1
+NL: NLBGS 1 ; 44.8861717 0.675887078
+NL: NLBGS 2 ; 19.0136302 0.286303476
+NL: NLBGS 3 ; 3.94927594 0.0594674144
+NL: NLBGS 4 ; 0.123069788 0.00185316048
+NL: NLBGS 5 ; 0.0301005436 0.000453248019
+NL: NLBGS 6 ; 0.00254243055 3.82834153e-05
+NL: NLBGS 7 ; 0.000672880657 1.01321036e-05
+NL: NLBGS 8 ; 9.36098825e-05 1.40955906e-06
+NL: NLBGS 9 ; 2.58865101e-05 3.89793938e-07
+NL: NLBGS 10 ; 4.96219169e-06 7.4719699e-08
+NL: NLBGS 11 ; 1.41215834e-06 2.12640004e-08
+NL: NLBGS 12 ; 3.41920746e-07 5.14857483e-09
+NL: NLBGS 13 ; 1.00702824e-07 1.51636317e-09
+NL: NLBGS 14 ; 2.42146977e-08 3.64620119e-10
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 208.823284 1
+NL: NLBGS 1 ; 141.164044 0.675997627
+NL: NLBGS 2 ; 59.8248196 0.286485389
+NL: NLBGS 3 ; 12.4290802 0.0595196092
+NL: NLBGS 4 ; 0.387367834 0.00185500308
+NL: NLBGS 5 ; 0.0947548876 0.000453756334
+NL: NLBGS 6 ; 0.00800292537 3.83239131e-05
+NL: NLBGS 7 ; 0.00211824809 1.01437352e-05
+NL: NLBGS 8 ; 0.000294650702 1.41100502e-06
+NL: NLBGS 9 ; 8.14851981e-05 3.90211267e-07
+NL: NLBGS 10 ; 1.56211752e-05 7.48057157e-08
+NL: NLBGS 11 ; 4.44324946e-06 2.12775576e-08
+NL: NLBGS 12 ; 1.07430379e-06 5.14455944e-09
+NL: NLBGS 13 ; 3.10566014e-07 1.48721928e-09
+NL: NLBGS 14 ; 8.68387912e-08 4.15848222e-10
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 703.569667 1
+NL: NLBGS 1 ; 475.729245 0.676165086
+NL: NLBGS 2 ; 201.757342 0.286762422
+NL: NLBGS 3 ; 41.9409971 0.0596117188
+NL: NLBGS 4 ; 1.30566572 0.00185577318
+NL: NLBGS 5 ; 0.319466639 0.000454065395
+NL: NLBGS 6 ; 0.0269547359 3.83113956e-05
+NL: NLBGS 7 ; 0.00713600269 1.01425673e-05
+NL: NLBGS 8 ; 0.00099176183 1.40961425e-06
+NL: NLBGS 9 ; 0.000274322959 3.89901628e-07
+NL: NLBGS 10 ; 5.25426946e-05 7.4680159e-08
+NL: NLBGS 11 ; 1.49464422e-05 2.12437273e-08
+NL: NLBGS 12 ; 3.61727697e-06 5.14132024e-09
+NL: NLBGS 13 ; 1.04938455e-06 1.49151477e-09
+NL: NLBGS 14 ; 3.05230258e-07 4.33830895e-10
+NL: NLBGS 15 ; 8.97072747e-08 1.27503045e-10
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 664.438182 1
+NL: NLBGS 1 ; 449.387268 0.676341728
+NL: NLBGS 2 ; 190.77682 0.287125011
+NL: NLBGS 3 ; 39.6807746 0.0597207921
+NL: NLBGS 4 ; 1.23406449 0.0018573052
+NL: NLBGS 5 ; 0.302037122 0.000454575204
+NL: NLBGS 6 ; 0.0254641357 3.83243112e-05
+NL: NLBGS 7 ; 0.00674286854 1.01482256e-05
+NL: NLBGS 8 ; 0.000936462334 1.40940476e-06
+NL: NLBGS 9 ; 0.000259076866 3.89918691e-07
+NL: NLBGS 10 ; 4.95856763e-05 7.46279753e-08
+NL: NLBGS 11 ; 1.41108789e-05 2.12373089e-08
+NL: NLBGS 12 ; 3.4074049e-06 5.12824968e-09
+NL: NLBGS 13 ; 9.88876837e-07 1.4882902e-09
+NL: NLBGS 14 ; 2.90156271e-07 4.36694155e-10
+NL: NLBGS 15 ; 8.5834025e-08 1.2918286e-10
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 1440.75749 1
+NL: NLBGS 1 ; 975.129878 0.676817495
+NL: NLBGS 2 ; 414.686285 0.28782518
+NL: NLBGS 3 ; 86.3541654 0.0599366415
+NL: NLBGS 4 ; 2.67923259 0.00185959997
+NL: NLBGS 5 ; 0.656098177 0.000455384185
+NL: NLBGS 6 ; 0.0551995484 3.83128658e-05
+NL: NLBGS 7 ; 0.0146228586 1.0149424e-05
+NL: NLBGS 8 ; 0.00202711771 1.40698051e-06
+NL: NLBGS 9 ; 0.000561009502 3.89385101e-07
+NL: NLBGS 10 ; 0.000107193559 7.4400834e-08
+NL: NLBGS 11 ; 3.05119227e-05 2.1177695e-08
+NL: NLBGS 12 ; 7.36069922e-06 5.1089092e-09
+NL: NLBGS 13 ; 2.13430724e-06 1.48137855e-09
+NL: NLBGS 14 ; 6.16837561e-07 4.28134203e-10
+NL: NLBGS 15 ; 1.79915494e-07 1.24875626e-10
+NL: NLBGS 16 ; 5.79025351e-08 4.01889529e-11
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 2394.46553 1
+NL: NLBGS 1 ; 1622.22778 0.677490554
+NL: NLBGS 2 ; 691.598317 0.288832021
+NL: NLBGS 3 ; 144.283589 0.0602571169
+NL: NLBGS 4 ; 4.45644157 0.0018611425
+NL: NLBGS 5 ; 1.09219578 0.000456133431
+NL: NLBGS 6 ; 0.0915399746 3.82298152e-05
+NL: NLBGS 7 ; 0.0242646493 1.0133639e-05
+NL: NLBGS 8 ; 0.00335239766 1.40006094e-06
+NL: NLBGS 9 ; 0.000928269486 3.87672938e-07
+NL: NLBGS 10 ; 0.000176815315 7.38433327e-08
+NL: NLBGS 11 ; 5.03507792e-05 2.10279825e-08
+NL: NLBGS 12 ; 1.2112438e-05 5.05851423e-09
+NL: NLBGS 13 ; 3.5179764e-06 1.46921155e-09
+NL: NLBGS 14 ; 1.01294717e-06 4.23036856e-10
+NL: NLBGS 15 ; 2.97345302e-07 1.24180239e-10
+NL: NLBGS 16 ; 1.04449238e-07 4.36211075e-11
+NL: NLBGS 17 ; 3.17712379e-08 1.32686136e-11
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 5341.74045 1
+NL: NLBGS 1 ; 3626.5846 0.678914416
+NL: NLBGS 2 ; 1552.13173 0.29056667
+NL: NLBGS 3 ; 325.02185 0.0608456838
+NL: NLBGS 4 ; 9.92086755 0.00185723504
+NL: NLBGS 5 ; 2.43490504 0.000455826161
+NL: NLBGS 6 ; 0.202033756 3.78217096e-05
+NL: NLBGS 7 ; 0.0536113911 1.00363152e-05
+NL: NLBGS 8 ; 0.00734179953 1.37442087e-06
+NL: NLBGS 9 ; 0.0020348303 3.80930208e-07
+NL: NLBGS 10 ; 0.000384440439 7.19691349e-08
+NL: NLBGS 11 ; 0.000109572704 2.05125474e-08
+NL: NLBGS 12 ; 2.61458302e-05 4.89462759e-09
+NL: NLBGS 13 ; 7.59695729e-06 1.42218765e-09
+NL: NLBGS 14 ; 2.16974849e-06 4.06187554e-10
+NL: NLBGS 15 ; 6.36469012e-07 1.19150119e-10
+NL: NLBGS 16 ; 2.07483661e-07 3.88419585e-11
+NL: NLBGS 17 ; 5.90689852e-08 1.10580036e-11
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 17507.9121 1
+NL: NLBGS 1 ; 11963.282 0.683307177
+NL: NLBGS 2 ; 5158.4257 0.294633972
+NL: NLBGS 3 ; 1091.97912 0.0623706077
+NL: NLBGS 4 ; 31.9326048 0.00182389565
+NL: NLBGS 5 ; 7.86296475 0.000449109219
+NL: NLBGS 6 ; 0.62815327 3.58782512e-05
+NL: NLBGS 7 ; 0.167104596 9.54451875e-06
+NL: NLBGS 8 ; 0.0221360807 1.26434726e-06
+NL: NLBGS 9 ; 0.00614881131 3.5120186e-07
+NL: NLBGS 10 ; 0.00112672737 6.43553245e-08
+NL: NLBGS 11 ; 0.000321804254 1.83805043e-08
+NL: NLBGS 12 ; 7.46158152e-05 4.26183399e-09
+NL: NLBGS 13 ; 2.17249824e-05 1.24086654e-09
+NL: NLBGS 14 ; 6.04646133e-06 3.45355933e-10
+NL: NLBGS 15 ; 1.78380045e-06 1.0188539e-10
+NL: NLBGS 16 ; 5.75553944e-07 3.28739337e-11
+NL: NLBGS 17 ; 1.71241756e-07 9.78082109e-12
+NL: NLBGS 18 ; 6.23609187e-08 3.56187066e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 13449.7108 1
+NL: NLBGS 1 ; 9183.68673 0.68281667
+NL: NLBGS 2 ; 3934.94596 0.292567329
+NL: NLBGS 3 ; 824.359105 0.0612919577
+NL: NLBGS 4 ; 24.4446378 0.00181748427
+NL: NLBGS 5 ; 6.00991932 0.000446843759
+NL: NLBGS 6 ; 0.494290792 3.6751035e-05
+NL: NLBGS 7 ; 0.131310947 9.76310563e-06
+NL: NLBGS 8 ; 0.0178760873 1.3291057e-06
+NL: NLBGS 9 ; 0.00495837671 3.68660471e-07
+NL: NLBGS 10 ; 0.000931864168 6.92850711e-08
+NL: NLBGS 11 ; 0.000265763402 1.97597856e-08
+NL: NLBGS 12 ; 6.30971676e-05 4.6913401e-09
+NL: NLBGS 13 ; 1.83447273e-05 1.36394957e-09
+NL: NLBGS 14 ; 5.21873007e-06 3.88018014e-10
+NL: NLBGS 15 ; 1.53715649e-06 1.14289186e-10
+NL: NLBGS 16 ; 5.07344556e-07 3.77215959e-11
+NL: NLBGS 17 ; 1.50042896e-07 1.11558455e-11
+NL: NLBGS 18 ; 5.33116102e-08 3.96377372e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 94493.5509 1
+NL: NLBGS 1 ; 66841.7441 0.707368317
+NL: NLBGS 2 ; 29219.78 0.309225124
+NL: NLBGS 3 ; 6442.56447 0.0681799383
+NL: NLBGS 4 ; 158.547713 0.00167786809
+NL: NLBGS 5 ; 39.1625283 0.000414446573
+NL: NLBGS 6 ; 2.53170516 2.67923592e-05
+NL: NLBGS 7 ; 0.675925797 7.1531421e-06
+NL: NLBGS 8 ; 0.0742402006 7.85664206e-07
+NL: NLBGS 9 ; 0.0206990029 2.19052017e-07
+NL: NLBGS 10 ; 0.00318926279 3.37511159e-08
+NL: NLBGS 11 ; 0.000914243216 9.67519166e-09
+NL: NLBGS 12 ; 0.000180063287 1.90556165e-09
+NL: NLBGS 13 ; 5.26358458e-05 5.57031091e-10
+NL: NLBGS 14 ; 1.25504406e-05 1.32817959e-10
+NL: NLBGS 15 ; 3.72219907e-06 3.93910381e-11
+NL: NLBGS 16 ; 1.03394107e-06 1.09419221e-11
+NL: NLBGS 17 ; 3.09078901e-07 3.27089942e-12
+NL: NLBGS 18 ; 9.85259622e-08 1.04267393e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 85426.3985 1
+NL: NLBGS 1 ; 60112.5974 0.703677065
+NL: NLBGS 2 ; 25492.8632 0.298419032
+NL: NLBGS 3 ; 5327.5227 0.0623638921
+NL: NLBGS 4 ; 143.369395 0.00167827975
+NL: NLBGS 5 ; 35.468438 0.000415192946
+NL: NLBGS 6 ; 2.87173709 3.36165067e-05
+NL: NLBGS 7 ; 0.765636619 8.96252953e-06
+NL: NLBGS 8 ; 0.103455669 1.21105034e-06
+NL: NLBGS 9 ; 0.0287607779 3.36673188e-07
+NL: NLBGS 10 ; 0.00536916979 6.28514123e-08
+NL: NLBGS 11 ; 0.0015337601 1.79541702e-08
+NL: NLBGS 12 ; 0.000361567244 4.23250014e-09
+NL: NLBGS 13 ; 0.000105252162 1.23208006e-09
+NL: NLBGS 14 ; 2.97162417e-05 3.47857832e-10
+NL: NLBGS 15 ; 8.76777324e-06 1.02635408e-10
+NL: NLBGS 16 ; 2.86144844e-06 3.34960678e-11
+NL: NLBGS 17 ; 8.53331533e-07 9.98908473e-12
+NL: NLBGS 18 ; 3.18479038e-07 3.72811032e-12
+NL: NLBGS 19 ; 9.87212604e-08 1.15562943e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 4581.52042 1
+NL: NLBGS 1 ; 3125.24023 0.682140413
+NL: NLBGS 2 ; 1340.84348 0.292663429
+NL: NLBGS 3 ; 281.747993 0.061496614
+NL: NLBGS 4 ; 8.31628662 0.00181518052
+NL: NLBGS 5 ; 2.04531592 0.000446427328
+NL: NLBGS 6 ; 0.166733044 3.63925136e-05
+NL: NLBGS 7 ; 0.0443069206 9.67078971e-06
+NL: NLBGS 8 ; 0.00598180662 1.30563788e-06
+NL: NLBGS 9 ; 0.00165975446 3.6227154e-07
+NL: NLBGS 10 ; 0.000309536511 6.75619626e-08
+NL: NLBGS 11 ; 8.83098775e-05 1.92752339e-08
+NL: NLBGS 12 ; 2.0815958e-05 4.5434607e-09
+NL: NLBGS 13 ; 6.05432255e-06 1.3214658e-09
+NL: NLBGS 14 ; 1.71235641e-06 3.7375287e-10
+NL: NLBGS 15 ; 5.06011796e-07 1.1044626e-10
+NL: NLBGS 16 ; 1.63090345e-07 3.55974285e-11
+NL: NLBGS 17 ; 4.83830389e-08 1.05604765e-11
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 88815.9281 1
+NL: NLBGS 1 ; 62775.7713 0.706807582
+NL: NLBGS 2 ; 27389.9687 0.308390277
+NL: NLBGS 3 ; 6028.70513 0.0678786482
+NL: NLBGS 4 ; 148.214244 0.00166878
+NL: NLBGS 5 ; 36.6052302 0.000412147134
+NL: NLBGS 6 ; 2.38039622 2.68014563e-05
+NL: NLBGS 7 ; 0.635291808 7.15290401e-06
+NL: NLBGS 8 ; 0.0701318991 7.89632002e-07
+NL: NLBGS 9 ; 0.0195449469 2.20061281e-07
+NL: NLBGS 10 ; 0.00302494792 3.40586197e-08
+NL: NLBGS 11 ; 0.000866760263 9.75906328e-09
+NL: NLBGS 12 ; 0.000171401221 1.92984777e-09
+NL: NLBGS 13 ; 5.00793869e-05 5.63855921e-10
+NL: NLBGS 14 ; 1.19868176e-05 1.34962476e-10
+NL: NLBGS 15 ; 3.5516348e-06 3.99887147e-11
+NL: NLBGS 16 ; 9.90253848e-07 1.11495074e-11
+NL: NLBGS 17 ; 2.95495904e-07 3.3270598e-12
+NL: NLBGS 18 ; 9.40644315e-08 1.05909417e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 80333.4258 1
+NL: NLBGS 1 ; 56523.1926 0.703607398
+NL: NLBGS 2 ; 23981.804 0.298528337
+NL: NLBGS 3 ; 5023.04012 0.0625273984
+NL: NLBGS 4 ; 134.184529 0.00167034491
+NL: NLBGS 5 ; 33.2092972 0.000413393265
+NL: NLBGS 6 ; 2.66850237 3.32178337e-05
+NL: NLBGS 7 ; 0.711644187 8.85863114e-06
+NL: NLBGS 8 ; 0.0954928487 1.18870629e-06
+NL: NLBGS 9 ; 0.0265536969 3.30543565e-07
+NL: NLBGS 10 ; 0.00492495046 6.13063667e-08
+NL: NLBGS 11 ; 0.00140721231 1.75171456e-08
+NL: NLBGS 12 ; 0.000329694777 4.10407964e-09
+NL: NLBGS 13 ; 9.60021696e-05 1.19504638e-09
+NL: NLBGS 14 ; 2.69462887e-05 3.35430594e-10
+NL: NLBGS 15 ; 7.95376294e-06 9.90093832e-11
+NL: NLBGS 16 ; 2.58269102e-06 3.21496437e-11
+NL: NLBGS 17 ; 7.67926429e-07 9.55923915e-12
+NL: NLBGS 18 ; 2.85793102e-07 3.55758639e-12
+NL: NLBGS 19 ; 8.44967727e-08 1.05182584e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 3897.74773 1
+NL: NLBGS 1 ; 2660.26858 0.682514304
+NL: NLBGS 2 ; 1141.84465 0.292949859
+NL: NLBGS 3 ; 240.463038 0.0616928173
+NL: NLBGS 4 ; 7.00804307 0.00179797246
+NL: NLBGS 5 ; 1.72470067 0.000442486481
+NL: NLBGS 6 ; 0.139258666 3.57279833e-05
+NL: NLBGS 7 ; 0.0370232728 9.49863239e-06
+NL: NLBGS 8 ; 0.00495754165 1.27189905e-06
+NL: NLBGS 9 ; 0.00137610705 3.5305185e-07
+NL: NLBGS 10 ; 0.00025470618 6.53470152e-08
+NL: NLBGS 11 ; 7.26945213e-05 1.86503916e-08
+NL: NLBGS 12 ; 1.701368e-05 4.36500286e-09
+NL: NLBGS 13 ; 4.94877194e-06 1.26964911e-09
+NL: NLBGS 14 ; 1.38808167e-06 3.5612404e-10
+NL: NLBGS 15 ; 4.07264309e-07 1.04487088e-10
+NL: NLBGS 16 ; 1.34882946e-07 3.46053555e-11
+NL: NLBGS 17 ; 4.02728061e-08 1.03323275e-11
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 84069.8819 1
+NL: NLBGS 1 ; 59346.5691 0.705919501
+NL: NLBGS 2 ; 25870.2287 0.30772291
+NL: NLBGS 3 ; 5690.42059 0.0676867918
+NL: NLBGS 4 ; 139.557847 0.00166002193
+NL: NLBGS 5 ; 34.4770766 0.000410100215
+NL: NLBGS 6 ; 2.24876368 2.67487432e-05
+NL: NLBGS 7 ; 0.60020296 7.13933392e-06
+NL: NLBGS 8 ; 0.0664405521 7.9030148e-07
+NL: NLBGS 9 ; 0.0185161224 2.20246799e-07
+NL: NLBGS 10 ; 0.00287275601 3.41710484e-08
+NL: NLBGS 11 ; 0.00082313276 9.79105408e-09
+NL: NLBGS 12 ; 0.000163130885 1.94042005e-09
+NL: NLBGS 13 ; 4.7662148e-05 5.66934875e-10
+NL: NLBGS 14 ; 1.14297227e-05 1.35955023e-10
+NL: NLBGS 15 ; 3.38643205e-06 4.02811562e-11
+NL: NLBGS 16 ; 9.51952572e-07 1.13233485e-11
+NL: NLBGS 17 ; 2.86301632e-07 3.40551961e-12
+NL: NLBGS 18 ; 9.12861252e-08 1.08583625e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 76046.3888 1
+NL: NLBGS 1 ; 53459.3199 0.702983018
+NL: NLBGS 2 ; 22700.6965 0.29851117
+NL: NLBGS 3 ; 4765.90362 0.0626710051
+NL: NLBGS 4 ; 126.252964 0.00166020985
+NL: NLBGS 5 ; 31.2602186 0.000411067758
+NL: NLBGS 6 ; 2.49145977 3.27623679e-05
+NL: NLBGS 7 ; 0.664619697 8.73966151e-06
+NL: NLBGS 8 ; 0.0885193766 1.16401815e-06
+NL: NLBGS 9 ; 0.0246208383 3.23760782e-07
+NL: NLBGS 10 ; 0.00453460066 5.96294017e-08
+NL: NLBGS 11 ; 0.00129600345 1.70422747e-08
+NL: NLBGS 12 ; 0.000301626005 3.96634225e-09
+NL: NLBGS 13 ; 8.78507982e-05 1.15522643e-09
+NL: NLBGS 14 ; 2.45038873e-05 3.22222891e-10
+NL: NLBGS 15 ; 7.23500213e-06 9.51393254e-11
+NL: NLBGS 16 ; 2.33895581e-06 3.0756961e-11
+NL: NLBGS 17 ; 6.981009e-07 9.17993492e-12
+NL: NLBGS 18 ; 2.59623052e-07 3.41400895e-12
+NL: NLBGS 19 ; 7.70572564e-08 1.01329278e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 75693.7569 1
+NL: NLBGS 1 ; 53291.131 0.704036016
+NL: NLBGS 2 ; 23198.7731 0.306481989
+NL: NLBGS 3 ; 5098.33514 0.0673547642
+NL: NLBGS 4 ; 124.413507 0.00164364291
+NL: NLBGS 5 ; 30.7548733 0.000406306604
+NL: NLBGS 6 ; 2.01483413 2.6618234e-05
+NL: NLBGS 7 ; 0.537898618 7.10624813e-06
+NL: NLBGS 8 ; 0.0597904199 7.89898961e-07
+NL: NLBGS 9 ; 0.0166647112 2.20159653e-07
+NL: NLBGS 10 ; 0.00259514662 3.42848172e-08
+NL: NLBGS 11 ; 0.00074364893 9.82444208e-09
+NL: NLBGS 12 ; 0.000147877658 1.95363084e-09
+NL: NLBGS 13 ; 4.32081644e-05 5.70828641e-10
+NL: NLBGS 14 ; 1.03979186e-05 1.37368246e-10
+NL: NLBGS 15 ; 3.08305681e-06 4.07306618e-11
+NL: NLBGS 16 ; 8.67202021e-07 1.14567179e-11
+NL: NLBGS 17 ; 2.60172229e-07 3.43716892e-12
+NL: NLBGS 18 ; 8.64339634e-08 1.14189026e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 68465.6961 1
+NL: NLBGS 1 ; 48028.1701 0.701492468
+NL: NLBGS 2 ; 20425.9385 0.298338287
+NL: NLBGS 3 ; 4306.55069 0.0629008531
+NL: NLBGS 4 ; 112.334321 0.00164073876
+NL: NLBGS 5 ; 27.8341729 0.000406541881
+NL: NLBGS 6 ; 2.18455333 3.19072683e-05
+NL: NLBGS 7 ; 0.583014712 8.51542809e-06
+NL: NLBGS 8 ; 0.0765664504 1.11831844e-06
+NL: NLBGS 9 ; 0.021304947 3.11176957e-07
+NL: NLBGS 10 ; 0.00387253046 5.65616166e-08
+NL: NLBGS 11 ; 0.00110723671 1.61721383e-08
+NL: NLBGS 12 ; 0.00025448129 3.71691671e-09
+NL: NLBGS 13 ; 7.41507135e-05 1.08303454e-09
+NL: NLBGS 14 ; 2.0435295e-05 2.98474946e-10
+NL: NLBGS 15 ; 6.03586061e-06 8.81589022e-11
+NL: NLBGS 16 ; 1.92697336e-06 2.81450926e-11
+NL: NLBGS 17 ; 5.74620962e-07 8.3928302e-12
+NL: NLBGS 18 ; 2.0588884e-07 3.00718244e-12
+NL: NLBGS 19 ; 6.00753288e-08 8.77451515e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 67430.9328 1
+NL: NLBGS 1 ; 47372.0492 0.702526974
+NL: NLBGS 2 ; 20579.3922 0.305192163
+NL: NLBGS 3 ; 4515.98561 0.0669720175
+NL: NLBGS 4 ; 109.758903 0.00162772333
+NL: NLBGS 5 ; 27.1395473 0.000402479192
+NL: NLBGS 6 ; 1.7875922 2.65099729e-05
+NL: NLBGS 7 ; 0.477201183 7.07688835e-06
+NL: NLBGS 8 ; 0.053305545 7.90520652e-07
+NL: NLBGS 9 ; 0.0148547243 2.202954e-07
+NL: NLBGS 10 ; 0.00232350887 3.44576113e-08
+NL: NLBGS 11 ; 0.000665687134 9.87213296e-09
+NL: NLBGS 12 ; 0.000132902028 1.97093563e-09
+NL: NLBGS 13 ; 3.88246195e-05 5.75768685e-10
+NL: NLBGS 14 ; 9.37593476e-06 1.39045011e-10
+NL: NLBGS 15 ; 2.7778827e-06 4.11959702e-11
+NL: NLBGS 16 ; 7.81706943e-07 1.15927055e-11
+NL: NLBGS 17 ; 2.34344242e-07 3.47532255e-12
+NL: NLBGS 18 ; 7.32973703e-08 1.0869992e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 60998.9542 1
+NL: NLBGS 1 ; 42727.2297 0.700458398
+NL: NLBGS 2 ; 18187.9964 0.298168987
+NL: NLBGS 3 ; 3848.85407 0.0630970501
+NL: NLBGS 4 ; 99.0558741 0.00162389463
+NL: NLBGS 5 ; 24.5562258 0.00040256798
+NL: NLBGS 6 ; 1.90015351 3.11505915e-05
+NL: NLBGS 7 ; 0.507276423 8.31614951e-06
+NL: NLBGS 8 ; 0.0657622555 1.07808825e-06
+NL: NLBGS 9 ; 0.0183042255 3.00074414e-07
+NL: NLBGS 10 ; 0.003287057 5.38871042e-08
+NL: NLBGS 11 ; 0.000940137257 1.54123504e-08
+NL: NLBGS 12 ; 0.000213615081 3.50194661e-09
+NL: NLBGS 13 ; 6.22675911e-05 1.02079768e-09
+NL: NLBGS 14 ; 1.69706143e-05 2.78211561e-10
+NL: NLBGS 15 ; 5.01306865e-06 8.21828622e-11
+NL: NLBGS 16 ; 1.5812574e-06 2.59226968e-11
+NL: NLBGS 17 ; 4.70698635e-07 7.71650336e-12
+NL: NLBGS 18 ; 1.65575841e-07 2.71440459e-12
+NL: NLBGS 19 ; 4.7997611e-08 7.86859572e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 60105.1847 1
+NL: NLBGS 1 ; 42140.5997 0.70111422
+NL: NLBGS 2 ; 18271.8089 0.303997217
+NL: NLBGS 3 ; 4004.45834 0.0666241749
+NL: NLBGS 4 ; 96.9493042 0.00161299403
+NL: NLBGS 5 ; 23.976967 0.000398916784
+NL: NLBGS 6 ; 1.58608359 2.63884654e-05
+NL: NLBGS 7 ; 0.42337011 7.04382012e-06
+NL: NLBGS 8 ; 0.0474796977 7.89943462e-07
+NL: NLBGS 9 ; 0.0132288608 2.2009517e-07
+NL: NLBGS 10 ; 0.00207651817 3.45480707e-08
+NL: NLBGS 11 ; 0.00059481229 9.89618938e-09
+NL: NLBGS 12 ; 0.000119132409 1.98206544e-09
+NL: NLBGS 13 ; 3.47972659e-05 5.78939505e-10
+NL: NLBGS 14 ; 8.42862228e-06 1.40231202e-10
+NL: NLBGS 15 ; 2.49783353e-06 4.15577049e-11
+NL: NLBGS 16 ; 7.07744604e-07 1.17751007e-11
+NL: NLBGS 17 ; 2.11173533e-07 3.51339962e-12
+NL: NLBGS 18 ; 6.90291707e-08 1.14847281e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 54372.7263 1
+NL: NLBGS 1 ; 38030.5697 0.699442022
+NL: NLBGS 2 ; 16199.6701 0.297937425
+NL: NLBGS 3 ; 3439.09252 0.0632503234
+NL: NLBGS 4 ; 87.4773257 0.00160884568
+NL: NLBGS 5 ; 21.6933908 0.000398975594
+NL: NLBGS 6 ; 1.65707568 3.04762293e-05
+NL: NLBGS 7 ; 0.442479463 8.13789362e-06
+NL: NLBGS 8 ; 0.0566878244 1.0425783e-06
+NL: NLBGS 9 ; 0.0157818869 2.90253735e-07
+NL: NLBGS 10 ; 0.00280296052 5.15508548e-08
+NL: NLBGS 11 ; 0.000801869605 1.47476439e-08
+NL: NLBGS 12 ; 0.000180297809 3.31596043e-09
+NL: NLBGS 13 ; 5.25679488e-05 9.66807301e-10
+NL: NLBGS 14 ; 1.41872602e-05 2.60926042e-10
+NL: NLBGS 15 ; 4.19210928e-06 7.70994866e-11
+NL: NLBGS 16 ; 1.31193683e-06 2.41285829e-11
+NL: NLBGS 17 ; 3.92618426e-07 7.2208707e-12
+NL: NLBGS 18 ; 1.39098399e-07 2.55823846e-12
+NL: NLBGS 19 ; 4.20097566e-08 7.72625533e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 52531.3929 1
+NL: NLBGS 1 ; 36786.211 0.700270999
+NL: NLBGS 2 ; 15901.4699 0.302704136
+NL: NLBGS 3 ; 3477.3824 0.0661962725
+NL: NLBGS 4 ; 83.9567796 0.00159822108
+NL: NLBGS 5 ; 20.7572388 0.000395139699
+NL: NLBGS 6 ; 1.38089139 2.62869745e-05
+NL: NLBGS 7 ; 0.368389896 7.01275704e-06
+NL: NLBGS 8 ; 0.0415206472 7.90396845e-07
+NL: NLBGS 9 ; 0.011561262 2.20082914e-07
+NL: NLBGS 10 ; 0.00182273799 3.46980708e-08
+NL: NLBGS 11 ; 0.000521795041 9.93301361e-09
+NL: NLBGS 12 ; 0.000104916706 1.99721919e-09
+NL: NLBGS 13 ; 3.06263643e-05 5.83010703e-10
+NL: NLBGS 14 ; 7.44070589e-06 1.41643034e-10
+NL: NLBGS 15 ; 2.20312366e-06 4.19391822e-11
+NL: NLBGS 16 ; 6.19728746e-07 1.17973027e-11
+NL: NLBGS 17 ; 1.82880966e-07 3.48136526e-12
+NL: NLBGS 18 ; 5.97520573e-08 1.13745427e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 47204.0561 1
+NL: NLBGS 1 ; 33009.4786 0.699293267
+NL: NLBGS 2 ; 14059.3216 0.297841389
+NL: NLBGS 3 ; 2993.43987 0.0634148867
+NL: NLBGS 4 ; 75.3536103 0.00159633761
+NL: NLBGS 5 ; 18.6904071 0.000395949176
+NL: NLBGS 6 ; 1.41005569 2.98714943e-05
+NL: NLBGS 7 ; 0.376567998 7.97745002e-06
+NL: NLBGS 8 ; 0.0476969293 1.01044133e-06
+NL: NLBGS 9 ; 0.013280807 2.81348851e-07
+NL: NLBGS 10 ; 0.00233380025 4.94406719e-08
+NL: NLBGS 11 ; 0.00066776632 1.41463759e-08
+NL: NLBGS 12 ; 0.000148645395 3.14899623e-09
+NL: NLBGS 13 ; 4.33457765e-05 9.18263812e-10
+NL: NLBGS 14 ; 1.15912464e-05 2.45556152e-10
+NL: NLBGS 15 ; 3.4263236e-06 7.2585364e-11
+NL: NLBGS 16 ; 1.06346364e-06 2.25290734e-11
+NL: NLBGS 17 ; 3.15848348e-07 6.69112728e-12
+NL: NLBGS 18 ; 1.16520642e-07 2.46844555e-12
+NL: NLBGS 19 ; 3.3686582e-08 7.13637444e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 43967.7975 1
+NL: NLBGS 1 ; 30797.4568 0.700454845
+NL: NLBGS 2 ; 13242.3229 0.301182312
+NL: NLBGS 3 ; 2885.54196 0.0656285309
+NL: NLBGS 4 ; 69.5369544 0.00158154282
+NL: NLBGS 5 ; 17.175692 0.000390642537
+NL: NLBGS 6 ; 1.15176229 2.61955876e-05
+NL: NLBGS 7 ; 0.306913441 6.98041426e-06
+NL: NLBGS 8 ; 0.0348347349 7.92278368e-07
+NL: NLBGS 9 ; 0.00968830186 2.20349947e-07
+NL: NLBGS 10 ; 0.00153692069 3.49555988e-08
+NL: NLBGS 11 ; 0.000439478457 9.99546218e-09
+NL: NLBGS 12 ; 8.88528853e-05 2.02086277e-09
+NL: NLBGS 13 ; 2.59073593e-05 5.89234866e-10
+NL: NLBGS 14 ; 6.32564789e-06 1.4387002e-10
+NL: NLBGS 15 ; 1.87105501e-06 4.25551225e-11
+NL: NLBGS 16 ; 5.33050801e-07 1.21236639e-11
+NL: NLBGS 17 ; 1.58476666e-07 3.60438037e-12
+NL: NLBGS 18 ; 5.17495417e-08 1.17698736e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 37698.5305 1
+NL: NLBGS 1 ; 26431.4676 0.701127267
+NL: NLBGS 2 ; 11238.0724 0.298103727
+NL: NLBGS 3 ; 2400.35228 0.0636723036
+NL: NLBGS 4 ; 59.6481281 0.00158224014
+NL: NLBGS 5 ; 14.7950729 0.00039245755
+NL: NLBGS 6 ; 1.09906991 2.91541845e-05
+NL: NLBGS 7 ; 0.29352311 7.78606238e-06
+NL: NLBGS 8 ; 0.0366576686 9.72389856e-07
+NL: NLBGS 9 ; 0.0102076964 2.70771731e-07
+NL: NLBGS 10 ; 0.00177035833 4.69609373e-08
+NL: NLBGS 11 ; 0.000506601837 1.34382383e-08
+NL: NLBGS 12 ; 0.000111383897 2.9545952e-09
+NL: NLBGS 13 ; 3.24886881e-05 8.61802508e-10
+NL: NLBGS 14 ; 8.58306454e-06 2.27676369e-10
+NL: NLBGS 15 ; 2.53713234e-06 6.73005634e-11
+NL: NLBGS 16 ; 7.80158853e-07 2.06946755e-11
+NL: NLBGS 17 ; 2.33244158e-07 6.18708886e-12
+NL: NLBGS 18 ; 7.95287327e-08 2.10959769e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 31702.4741 1
+NL: NLBGS 1 ; 22322.7642 0.704133187
+NL: NLBGS 2 ; 9474.96984 0.298871621
+NL: NLBGS 3 ; 2050.63062 0.0646836147
+NL: NLBGS 4 ; 49.1590244 0.00155063684
+NL: NLBGS 5 ; 12.1176121 0.000382229223
+NL: NLBGS 6 ; 0.822626543 2.59483389e-05
+NL: NLBGS 7 ; 0.218778965 6.90100602e-06
+NL: NLBGS 8 ; 0.02512471 7.92515747e-07
+NL: NLBGS 9 ; 0.00697460725 2.20001985e-07
+NL: NLBGS 10 ; 0.0011185035 3.52812684e-08
+NL: NLBGS 11 ; 0.000319265605 1.00706842e-08
+NL: NLBGS 12 ; 6.52100985e-05 2.05694036e-09
+NL: NLBGS 13 ; 1.89843237e-05 5.98827828e-10
+NL: NLBGS 14 ; 4.67899046e-06 1.47590703e-10
+NL: NLBGS 15 ; 1.38276533e-06 4.3616953e-11
+NL: NLBGS 16 ; 4.00423287e-07 1.26306636e-11
+NL: NLBGS 17 ; 1.22534485e-07 3.86513951e-12
+NL: NLBGS 18 ; 4.24409887e-08 1.33872797e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 23312.6388 1
+NL: NLBGS 1 ; 16519.4093 0.708603151
+NL: NLBGS 2 ; 6959.35717 0.298522927
+NL: NLBGS 3 ; 1490.58655 0.0639389889
+NL: NLBGS 4 ; 36.1726461 0.00155163241
+NL: NLBGS 5 ; 8.96326407 0.000384480888
+NL: NLBGS 6 ; 0.649867264 2.78761778e-05
+NL: NLBGS 7 ; 0.173446671 7.44002738e-06
+NL: NLBGS 8 ; 0.0212020559 9.09466152e-07
+NL: NLBGS 9 ; 0.0059012471 2.53135097e-07
+NL: NLBGS 10 ; 0.00100349782 4.30452264e-08
+NL: NLBGS 11 ; 0.00028705808 1.231341e-08
+NL: NLBGS 12 ; 6.19615755e-05 2.65785337e-09
+NL: NLBGS 13 ; 1.80675445e-05 7.75010699e-10
+NL: NLBGS 14 ; 4.69275534e-06 2.01296617e-10
+NL: NLBGS 15 ; 1.38849024e-06 5.95595483e-11
+NL: NLBGS 16 ; 4.22904483e-07 1.81405669e-11
+NL: NLBGS 17 ; 1.27526245e-07 5.47026212e-12
+NL: NLBGS 18 ; 4.43736566e-08 1.9034163e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 13240.6815 1
+NL: NLBGS 1 ; 9753.16 0.736605587
+NL: NLBGS 2 ; 3877.06939 0.292814941
+NL: NLBGS 3 ; 826.162113 0.0623957392
+NL: NLBGS 4 ; 18.8080678 0.00142047581
+NL: NLBGS 5 ; 4.61252549 0.000348360126
+NL: NLBGS 6 ; 0.314616241 2.37613328e-05
+NL: NLBGS 7 ; 0.0833746663 6.2968561e-06
+NL: NLBGS 8 ; 0.00968700291 7.31609085e-07
+NL: NLBGS 9 ; 0.00268098708 2.02481049e-07
+NL: NLBGS 10 ; 0.00043569935 3.2906112e-08
+NL: NLBGS 11 ; 0.000124030966 9.36741553e-09
+NL: NLBGS 12 ; 2.56787549e-05 1.93938316e-09
+NL: NLBGS 13 ; 7.45438072e-06 5.62990711e-10
+NL: NLBGS 14 ; 1.85855887e-06 1.40367311e-10
+NL: NLBGS 15 ; 5.43575046e-07 4.10534038e-11
+NL: NLBGS 16 ; 1.60199685e-07 1.20990513e-11
+NL: NLBGS 17 ; 4.79767961e-08 3.62343856e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 23835.1794 1
+NL: NLBGS 1 ; 16076.7518 0.674496784
+NL: NLBGS 2 ; 6909.32531 0.289879308
+NL: NLBGS 3 ; 1462.67455 0.0613662069
+NL: NLBGS 4 ; 39.5010209 0.00165725713
+NL: NLBGS 5 ; 9.67967066 0.000406108572
+NL: NLBGS 6 ; 0.728655947 3.05706089e-05
+NL: NLBGS 7 ; 0.19244699 8.07407348e-06
+NL: NLBGS 8 ; 0.0240093282 1.00730638e-06
+NL: NLBGS 9 ; 0.00661780903 2.77648803e-07
+NL: NLBGS 10 ; 0.00114046377 4.78479206e-08
+NL: NLBGS 11 ; 0.000323279777 1.35631359e-08
+NL: NLBGS 12 ; 7.04577451e-05 2.95604006e-09
+NL: NLBGS 13 ; 2.03683599e-05 8.54550309e-10
+NL: NLBGS 14 ; 5.33613115e-06 2.23876274e-10
+NL: NLBGS 15 ; 1.56776643e-06 6.57753151e-11
+NL: NLBGS 16 ; 4.75549066e-07 1.99515623e-11
+NL: NLBGS 17 ; 1.41749431e-07 5.94706792e-12
+NL: NLBGS 18 ; 4.74160809e-08 1.98933183e-12
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 47275.8328 1
+NL: NLBGS 1 ; 31455.7038 0.665365409
+NL: NLBGS 2 ; 13084.2596 0.276764232
+NL: NLBGS 3 ; 2664.81987 0.0563674866
+NL: NLBGS 4 ; 78.7378542 0.00166549904
+NL: NLBGS 5 ; 18.931487 0.000400447457
+NL: NLBGS 6 ; 1.53258646 3.24179685e-05
+NL: NLBGS 7 ; 0.398991795 8.43965661e-06
+NL: NLBGS 8 ; 0.0530960907 1.12311275e-06
+NL: NLBGS 9 ; 0.0144557345 3.05774296e-07
+NL: NLBGS 10 ; 0.00264582983 5.59658006e-08
+NL: NLBGS 11 ; 0.000741676306 1.56882759e-08
+NL: NLBGS 12 ; 0.000171196171 3.62121957e-09
+NL: NLBGS 13 ; 4.89810617e-05 1.03606978e-09
+NL: NLBGS 14 ; 1.35426843e-05 2.86461042e-10
+NL: NLBGS 15 ; 3.93044857e-06 8.31386427e-11
+NL: NLBGS 16 ; 1.2589064e-06 2.66289629e-11
+NL: NLBGS 17 ; 3.68792394e-07 7.80086511e-12
+NL: NLBGS 18 ; 1.36052626e-07 2.87784727e-12
+NL: NLBGS 19 ; 4.28924197e-08 9.07280045e-13
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 1528.80549 1
+NL: NLBGS 1 ; 1212.62302 0.793183327
+NL: NLBGS 2 ; 447.338294 0.292606416
+NL: NLBGS 3 ; 89.7779883 0.0587242714
+NL: NLBGS 4 ; 2.36344924 0.00154594503
+NL: NLBGS 5 ; 0.568842533 0.000372083001
+NL: NLBGS 6 ; 0.045049146 2.94668919e-05
+NL: NLBGS 7 ; 0.0117663833 7.69645547e-06
+NL: NLBGS 8 ; 0.00155658757 1.01817241e-06
+NL: NLBGS 9 ; 0.00042514211 2.78087771e-07
+NL: NLBGS 10 ; 7.78025117e-05 5.08910469e-08
+NL: NLBGS 11 ; 2.18741143e-05 1.43079774e-08
+NL: NLBGS 12 ; 5.060198e-06 3.30990309e-09
+NL: NLBGS 13 ; 1.45070562e-06 9.48914448e-10
+NL: NLBGS 14 ; 4.01310024e-07 2.62499073e-10
+NL: NLBGS 15 ; 1.17184585e-07 7.66510758e-11
+NL: NLBGS 16 ; 3.47184567e-08 2.27095317e-11
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 190.973308 1
+NL: NLBGS 1 ; 129.559347 0.678415996
+NL: NLBGS 2 ; 52.9299124 0.277158693
+NL: NLBGS 3 ; 10.6413827 0.0557218329
+NL: NLBGS 4 ; 0.291644349 0.00152714718
+NL: NLBGS 5 ; 0.0694453514 0.000363639046
+NL: NLBGS 6 ; 0.00539051735 2.82265486e-05
+NL: NLBGS 7 ; 0.00139621078 7.3110258e-06
+NL: NLBGS 8 ; 0.000180869222 9.47091635e-07
+NL: NLBGS 9 ; 4.90856643e-05 2.57028927e-07
+NL: NLBGS 10 ; 8.81200802e-06 4.61426161e-08
+NL: NLBGS 11 ; 2.46395311e-06 1.29020811e-08
+NL: NLBGS 12 ; 5.62858352e-07 2.94731425e-09
+NL: NLBGS 13 ; 1.59778091e-07 8.36651432e-10
+NL: NLBGS 14 ; 4.73281563e-08 2.47826028e-10
+NL: NLBGS Converged
+
+==================
+AS_point_0.coupled
+==================
+NL: NLBGS 0 ; 1.18041168 1
+NL: NLBGS 1 ; 0.937684864 0.794371048
+NL: NLBGS 2 ; 0.229739583 0.19462666
+NL: NLBGS 3 ; 0.0408387633 0.0345970511
+NL: NLBGS 4 ; 0.000198845958 0.000168454753
+NL: NLBGS 5 ; 4.609903e-05 3.90533496e-05
+NL: NLBGS 6 ; 2.69144042e-06 2.28008623e-06
+NL: NLBGS 7 ; 6.96085581e-07 5.896973e-07
+NL: NLBGS 8 ; 8.31030768e-08 7.04017744e-08
+NL: NLBGS Converged
+Optimization terminated successfully.    (Exit mode 0)
+            Current function value: 1.04393448214
+            Iterations: 69
+            Function evaluations: 97
+            Gradient evaluations: 69
+Optimization Complete
+-----------------------------------</pre></div></div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">print</span><span class="p">(</span><span class="n">prob</span><span class="p">[</span><span class="s1">&#39;AS_point_0.fuelburn&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+<div class="cell border-box-sizing code_cell rendered"><div class="output_area"><pre>104393.44821362005</pre></div></div></div></blockquote>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="aerostructural_wingbox_walkthrough.html" title="Aerostructural with Wingbox Walkthrough"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="struct_example.html" title="Structural Optimization Example"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">OpenAeroStruct 2.1.0 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, John Jasa, Dr. John Hwang, Justin S. Gray.
+      Last updated on Apr 01, 2019.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>
